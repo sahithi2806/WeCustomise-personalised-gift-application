@@ -1,42 +1,59 @@
 import { Link } from 'react-router-dom'
+import { ArrowUpRight, Gift, Palette, Sparkles } from 'lucide-react'
+import BrandLogo from '../BrandLogo'
 
 export default function Footer() {
   return (
-    <footer className="bg-brand-900 text-gray-300 mt-auto">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+    <footer className="relative mt-auto overflow-hidden bg-slate-950 text-slate-300">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(245,158,11,0.18),transparent_26%),radial-gradient(circle_at_top_right,rgba(236,72,153,0.18),transparent_22%),linear-gradient(180deg,rgba(31,78,121,0.22),transparent_55%)]" />
+      <div className="relative mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+        <div className="mb-8 grid gap-4 rounded-[2rem] border border-white/10 bg-white/5 p-6 md:grid-cols-3">
+          <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-5">
+            <Palette size={20} className="text-orange-300" />
+            <p className="mt-3 text-sm font-semibold text-white">Live product previews</p>
+            <p className="mt-1 text-sm text-slate-400">Designs now sit on shirts, mugs, cases, and posters instead of flat replacement images.</p>
+          </div>
+          <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-5">
+            <Gift size={20} className="text-fuchsia-300" />
+            <p className="mt-3 text-sm font-semibold text-white">Gift scheduling</p>
+            <p className="mt-1 text-sm text-slate-400">Choose the delivery moment during checkout for birthdays, celebrations, and surprises.</p>
+          </div>
+          <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-5">
+            <Sparkles size={20} className="text-sky-300" />
+            <p className="mt-3 text-sm font-semibold text-white">Brighter storefront</p>
+            <p className="mt-1 text-sm text-slate-400">A more expressive visual system with layered gradients, softer glass surfaces, and richer motion.</p>
+          </div>
+        </div>
+
+        <div className="grid gap-10 md:grid-cols-3">
           <div>
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
-                <span className="text-brand-700 font-bold text-sm">WC</span>
-              </div>
-              <span className="text-white font-bold text-lg">WeCustomise</span>
-            </div>
-            <p className="text-sm text-gray-400 leading-relaxed">
-              Personalised products made just for you. Unique gifts, custom designs, delivered with love.
+            <BrandLogo to="/" light className="mb-4" />
+            <p className="max-w-sm text-sm leading-7 text-slate-400">
+              Personalised products made just for you. Distinct gifts, custom stories, and a little extra glow in every order.
             </p>
           </div>
 
           <div>
-            <h4 className="text-white font-semibold mb-3">Quick Links</h4>
-            <ul className="space-y-2 text-sm">
-              <li><Link to="/" className="hover:text-white transition-colors">Home</Link></li>
-              <li><Link to="/shop" className="hover:text-white transition-colors">Shop</Link></li>
-              <li><Link to="/register" className="hover:text-white transition-colors">Create Account</Link></li>
+            <h4 className="text-sm font-semibold uppercase tracking-[0.22em] text-white/70">Quick Links</h4>
+            <ul className="mt-4 space-y-3 text-sm">
+              <li><Link to="/" className="inline-flex items-center gap-2 transition hover:text-white">Home <ArrowUpRight size={14} /></Link></li>
+              <li><Link to="/shop" className="inline-flex items-center gap-2 transition hover:text-white">Shop <ArrowUpRight size={14} /></Link></li>
+              <li><Link to="/register" className="inline-flex items-center gap-2 transition hover:text-white">Create Account <ArrowUpRight size={14} /></Link></li>
             </ul>
           </div>
 
           <div>
-            <h4 className="text-white font-semibold mb-3">Support</h4>
-            <ul className="space-y-2 text-sm">
-              <li><a href="#" className="hover:text-white transition-colors">FAQ</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Shipping Policy</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Contact Us</a></li>
+            <h4 className="text-sm font-semibold uppercase tracking-[0.22em] text-white/70">Support</h4>
+            <ul className="mt-4 space-y-3 text-sm">
+              <li><a href="#" className="inline-flex items-center gap-2 transition hover:text-white">FAQ <ArrowUpRight size={14} /></a></li>
+              <li><a href="#" className="inline-flex items-center gap-2 transition hover:text-white">Shipping Policy <ArrowUpRight size={14} /></a></li>
+              <li><a href="#" className="inline-flex items-center gap-2 transition hover:text-white">Contact Us <ArrowUpRight size={14} /></a></li>
             </ul>
           </div>
         </div>
-        <div className="border-t border-white/10 mt-8 pt-6 text-center text-xs text-gray-500">
-          © {new Date().getFullYear()} WeCustomise. All rights reserved.
+
+        <div className="mt-10 border-t border-white/10 pt-6 text-center text-xs text-slate-500">
+          Copyright {new Date().getFullYear()} WeCustomise. Designed to make gifting feel personal.
         </div>
       </div>
     </footer>

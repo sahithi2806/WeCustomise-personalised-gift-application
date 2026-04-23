@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react'
 import { useLocation, useNavigate, Link } from 'react-router-dom'
-import { ArrowLeft, BadgePercent, CreditCard, MapPin, ShieldCheck, Smartphone, Truck } from 'lucide-react'
+import { ArrowLeft, BadgePercent, CalendarClock, CreditCard, Gift, MapPin, ShieldCheck, Smartphone, Truck } from 'lucide-react'
 import toast from 'react-hot-toast'
 import api from '../utils/api'
 import { useCart } from '../contexts/CartContext'
+import ProductPreview from '../components/ProductPreview'
 
 const SHIPPING_THRESHOLD = 999
 const SHIPPING_FEE = 99
@@ -16,6 +17,13 @@ const initialAddress = {
   state: '',
   pincode: '',
   landmark: '',
+}
+
+const initialGiftDelivery = {
+  enabled: false,
+  recipientName: '',
+  message: '',
+  scheduledDate: '',
 }
 
 const paymentOptions = [
@@ -32,12 +40,23 @@ function buildMockPaymentId(paymentMethod) {
   return `demo_${paymentMethod.toLowerCase()}_${Date.now()}`
 }
 
+function getMinimumScheduleValue() {
+  const nextHour = new Date(Date.now() + 60 * 60 * 1000)
+  const year = nextHour.getFullYear()
+  const month = `${nextHour.getMonth() + 1}`.padStart(2, '0')
+  const day = `${nextHour.getDate()}`.padStart(2, '0')
+  const hours = `${nextHour.getHours()}`.padStart(2, '0')
+  const minutes = `${nextHour.getMinutes()}`.padStart(2, '0')
+  return `${year}-${month}-${day}T${hours}:${minutes}`
+}
+
 export default function Checkout() {
   const { items, total, loading, fetchCart } = useCart()
   const navigate = useNavigate()
   const location = useLocation()
 
   const [address, setAddress] = useState(initialAddress)
+  const [giftDelivery, setGiftDelivery] = useState(initialGiftDelivery)
   const [paymentMethod, setPaymentMethod] = useState('UPI')
   const [discountCode, setDiscountCode] = useState('')
   const [discountState, setDiscountState] = useState(null)
@@ -48,14 +67,15 @@ export default function Checkout() {
   const shipping = subtotal >= SHIPPING_THRESHOLD ? 0 : SHIPPING_FEE
   const discountAmount = discountState?.savings || 0
   const grandTotal = Math.max(subtotal + shipping - discountAmount, 0)
-
-  const itemCount = useMemo(
-    () => items.reduce((sum, item) => sum + item.quantity, 0),
-    [items]
-  )
+  const itemCount = useMemo(() => items.reduce((sum, item) => sum + item.quantity, 0), [items])
+  const minimumSchedule = useMemo(() => getMinimumScheduleValue(), [])
 
   const updateAddress = (field, value) => {
     setAddress((current) => ({ ...current, [field]: value }))
+  }
+
+  const updateGiftDelivery = (field, value) => {
+    setGiftDelivery((current) => ({ ...current, [field]: value }))
   }
 
   const applyDiscount = async () => {
@@ -94,6 +114,16 @@ export default function Checkout() {
       return
     }
 
+    if (giftDelivery.enabled && !giftDelivery.recipientName.trim()) {
+      toast.error('Recipient name is required for scheduled gift delivery.')
+      return
+    }
+
+    if (giftDelivery.enabled && !giftDelivery.scheduledDate) {
+      toast.error('Choose a delivery date and time for the gift.')
+      return
+    }
+
     setPlacingOrder(true)
     try {
       const payload = {
@@ -101,6 +131,7 @@ export default function Checkout() {
         address,
         discountCode: discountState?.code || undefined,
         paymentId: paymentMethod === 'COD' ? undefined : buildMockPaymentId(paymentMethod),
+        giftDelivery: giftDelivery.enabled ? giftDelivery : undefined,
       }
 
       const { data } = await api.post('/orders', payload)
@@ -141,8 +172,8 @@ export default function Checkout() {
           <Link to="/cart" className="inline-flex items-center gap-2 text-sm text-brand-700 hover:underline mb-3">
             <ArrowLeft size={15} /> Back to cart
           </Link>
-          <h1 className="text-3xl font-bold text-gray-900">Checkout</h1>
-          <p className="text-sm text-gray-500 mt-1">Review delivery details, payment option, and your final total.</p>
+          <h1 className="text-3xl font-black tracking-tight text-slate-900">Checkout</h1>
+          <p className="text-sm text-slate-500 mt-1">Review delivery details, schedule gifts, and confirm the final total.</p>
         </div>
         {location.state?.fromCart && (
           <div className="hidden md:flex items-center gap-2 rounded-full bg-brand-50 px-4 py-2 text-sm text-brand-700">
@@ -152,7 +183,7 @@ export default function Checkout() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-8">
-        <form onSubmit={placeOrder} className="space-y-6">
+        <form id="checkout-form" onSubmit={placeOrder} className="space-y-6">
           <section className="card p-6">
             <div className="flex items-center gap-3 mb-5">
               <div className="w-10 h-10 rounded-xl bg-brand-50 flex items-center justify-center">
@@ -173,6 +204,65 @@ export default function Checkout() {
               <input className="input" placeholder="Pincode" value={address.pincode} onChange={(e) => updateAddress('pincode', e.target.value)} required />
               <input className="input sm:col-span-2" placeholder="Landmark (optional)" value={address.landmark} onChange={(e) => updateAddress('landmark', e.target.value)} />
             </div>
+          </section>
+
+          <section className="card p-6 border border-fuchsia-100 bg-gradient-to-br from-fuchsia-50 via-white to-orange-50">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-10 h-10 rounded-xl bg-fuchsia-100 flex items-center justify-center">
+                <Gift size={18} className="text-fuchsia-700" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">Gift Delivery Scheduler</h2>
+                <p className="text-sm text-gray-500">Choose when this order should arrive if you are buying it as a gift.</p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setGiftDelivery((current) => ({ ...current, enabled: !current.enabled }))}
+              className={`flex w-full items-center justify-between rounded-2xl border px-4 py-4 text-left transition-all ${
+                giftDelivery.enabled
+                  ? 'border-fuchsia-300 bg-white shadow-sm'
+                  : 'border-white/70 bg-white/70 hover:border-fuchsia-200'
+              }`}
+            >
+              <div>
+                <p className="font-semibold text-slate-900">Schedule this as a gift delivery</p>
+                <p className="mt-1 text-sm text-slate-500">Set a future delivery date during purchase instead of planning it later.</p>
+              </div>
+              <div className={`h-6 w-11 rounded-full p-1 transition-colors ${giftDelivery.enabled ? 'bg-fuchsia-600' : 'bg-slate-300'}`}>
+                <div className={`h-4 w-4 rounded-full bg-white transition-transform ${giftDelivery.enabled ? 'translate-x-5' : 'translate-x-0'}`} />
+              </div>
+            </button>
+
+            {giftDelivery.enabled && (
+              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <input
+                  className="input"
+                  placeholder="Recipient name"
+                  value={giftDelivery.recipientName}
+                  onChange={(e) => updateGiftDelivery('recipientName', e.target.value)}
+                  required={giftDelivery.enabled}
+                />
+                <div className="relative">
+                  <CalendarClock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="datetime-local"
+                    className="input pl-10"
+                    min={minimumSchedule}
+                    value={giftDelivery.scheduledDate}
+                    onChange={(e) => updateGiftDelivery('scheduledDate', e.target.value)}
+                    required={giftDelivery.enabled}
+                  />
+                </div>
+                <textarea
+                  className="input resize-none sm:col-span-2 min-h-[110px]"
+                  placeholder="Gift note for the order box (optional)"
+                  value={giftDelivery.message}
+                  onChange={(e) => updateGiftDelivery('message', e.target.value)}
+                />
+              </div>
+            )}
           </section>
 
           <section className="card p-6">
@@ -263,10 +353,10 @@ export default function Checkout() {
             <div className="space-y-4 mb-5">
               {items.map((item) => (
                 <div key={item.id} className="flex gap-3">
-                  <img
-                    src={item.customisation?.snapshot || item.product.imageUrl}
-                    alt={item.product.name}
-                    className="w-16 h-16 rounded-2xl object-cover bg-gray-100"
+                  <ProductPreview
+                    product={item.product}
+                    customisation={item.customisation}
+                    className="h-16 w-16 rounded-2xl shrink-0 bg-gray-100"
                   />
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-sm text-gray-900 line-clamp-2">{item.product.name}</p>
@@ -303,13 +393,22 @@ export default function Checkout() {
               </div>
             </div>
 
+            {giftDelivery.enabled && (
+              <div className="mt-4 rounded-2xl border border-fuchsia-100 bg-fuchsia-50 px-4 py-3 text-sm text-fuchsia-800">
+                Deliver to {giftDelivery.recipientName || 'your recipient'} on{' '}
+                {giftDelivery.scheduledDate
+                  ? new Date(giftDelivery.scheduledDate).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })
+                  : 'your chosen time'}.
+              </div>
+            )}
+
             {shipping > 0 && (
               <p className="text-xs text-gray-500 mt-3">
                 Add {formatCurrency(SHIPPING_THRESHOLD - subtotal)} more to unlock free shipping.
               </p>
             )}
 
-            <button onClick={placeOrder} disabled={placingOrder || loading} className="btn-primary w-full mt-6 py-3">
+            <button type="submit" form="checkout-form" disabled={placingOrder || loading} className="btn-primary w-full mt-6 py-3">
               {placingOrder ? 'Placing order...' : `Place Order ${paymentMethod === 'COD' ? '(COD)' : ''}`}
             </button>
 

@@ -1,115 +1,112 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, Paintbrush, Truck, ShieldCheck, Gift } from 'lucide-react'
+import { ArrowRight, Paintbrush, Truck, ShieldCheck, Gift, Sparkles } from 'lucide-react'
 import api from '../utils/api'
 import ProductCard from '../components/ProductCard'
 
 const FEATURES = [
-  { icon: Paintbrush, title: 'Fully Customisable', desc: 'Add text, colours, and your own images to make it truly unique.' },
-  { icon: Truck,      title: 'Fast Delivery',      desc: 'Delivered to your doorstep in 3–5 business days across India.' },
-  { icon: Gift,       title: 'Gift Scheduling',    desc: 'Schedule gifts for occasions and we\'ll remind you in advance.' },
-  { icon: ShieldCheck,title: 'Secure Checkout',   desc: 'Pay via UPI, Card, or COD. 100% safe and encrypted.' },
+  { icon: Paintbrush, title: 'Creative Studio', desc: 'Layer text, color, and artwork, then see the design sitting on the product itself.' },
+  { icon: Truck, title: 'Delivery That Fits', desc: 'Fast shipping now pairs with scheduled gift delivery when timing matters.' },
+  { icon: Gift, title: 'Gift-Ready Moments', desc: 'Plan birthdays, anniversaries, and celebrations right during purchase.' },
+  { icon: ShieldCheck, title: 'Safe Checkout', desc: 'UPI, card, and COD all work through a cleaner, trust-building checkout flow.' },
+]
+
+const heroImages = [
+  'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500',
+  'https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?w=500',
+  'https://images.unsplash.com/photo-1556821840-3a63f15732ce?w=500',
+  'https://images.unsplash.com/photo-1556656793-08538906a9f8?w=500',
 ]
 
 export default function Home() {
-  const [products, setProducts]     = useState([])
+  const [products, setProducts] = useState([])
   const [categories, setCategories] = useState([])
-  const [loading, setLoading]       = useState(true)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    Promise.all([
-      api.get('/products?limit=8'),
-      api.get('/products/categories'),
-    ]).then(([p, c]) => {
-      setProducts(p.data.products)
-      setCategories(c.data.categories)
-    }).catch(console.error)
+    Promise.all([api.get('/products?limit=8'), api.get('/products/categories')])
+      .then(([productsRes, categoriesRes]) => {
+        setProducts(productsRes.data.products)
+        setCategories(categoriesRes.data.categories)
+      })
+      .catch(console.error)
       .finally(() => setLoading(false))
   }, [])
 
   return (
     <div>
-      {/* ── Hero ────────────────────────────────────────────────── */}
-      <section className="bg-gradient-to-br from-brand-900 via-brand-700 to-brand-500 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28 flex flex-col md:flex-row items-center gap-10">
-          <div className="flex-1 text-center md:text-left">
-            <span className="inline-block bg-white/10 text-white text-xs font-semibold px-3 py-1 rounded-full mb-4 tracking-wide uppercase">
-              ✨ Make It Yours
+      <section className="relative overflow-hidden bg-[linear-gradient(135deg,#1f4e79_0%,#ec4899_48%,#f59e0b_100%)] text-white">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.22),transparent_28%),radial-gradient(circle_at_bottom_right,rgba(255,255,255,0.14),transparent_24%)]" />
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28 grid md:grid-cols-[1.15fr_0.85fr] gap-12 items-center">
+          <div>
+            <span className="mb-5 inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-white/90">
+              <Sparkles size={14} /> Make gifting look alive
             </span>
-            <h1 className="text-4xl md:text-6xl font-extrabold leading-tight mb-5">
-              Gifts That Feel<br />
-              <span className="text-yellow-300">Perfectly Personal</span>
+            <h1 className="max-w-3xl text-4xl md:text-6xl font-black leading-[0.95] tracking-tight">
+              Vibrant custom gifts that preview directly on the product.
             </h1>
-            <p className="text-lg text-blue-100 mb-8 max-w-md mx-auto md:mx-0">
-              Browse 100+ customisable products. Add your touch — text, colours, photos — and gift something they'll never forget.
+            <p className="mt-6 max-w-xl text-lg text-white/82">
+              Personalise shirts, mugs, posters, and cases with a bolder storefront, live product previews, and scheduled gift delivery built right into checkout.
             </p>
-            <div className="flex flex-wrap gap-3 justify-center md:justify-start">
-              <Link to="/shop" className="bg-white text-brand-700 font-bold px-7 py-3 rounded-xl hover:bg-yellow-300 transition-colors flex items-center gap-2">
-                Shop Now <ArrowRight size={18} />
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link to="/shop" className="inline-flex items-center gap-2 rounded-xl bg-white px-7 py-3 font-bold text-brand-700 transition hover:-translate-y-0.5 hover:bg-amber-200">
+                Explore Products <ArrowRight size={18} />
               </Link>
-              <Link to="/register" className="border-2 border-white text-white font-bold px-7 py-3 rounded-xl hover:bg-white/10 transition-colors">
+              <Link to="/register" className="inline-flex items-center rounded-xl border-2 border-white/80 px-7 py-3 font-bold text-white transition hover:bg-white/10">
                 Create Account
               </Link>
             </div>
           </div>
 
-          {/* Hero image grid */}
-          <div className="flex-1 grid grid-cols-2 gap-3 max-w-sm mx-auto md:max-w-none">
-            {['https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=300',
-              'https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?w=300',
-              'https://images.unsplash.com/photo-1556821840-3a63f15732ce?w=300',
-              'https://images.unsplash.com/photo-1556656793-08538906a9f8?w=300',
-            ].map((src, i) => (
-              <div key={i} className={`rounded-2xl overflow-hidden aspect-square shadow-lg ${i === 1 ? 'mt-6' : ''} ${i === 3 ? 'mt-6' : ''}`}>
-                <img src={src} alt="" className="w-full h-full object-cover" loading="lazy" />
+          <div className="grid grid-cols-2 gap-4">
+            {heroImages.map((src, index) => (
+              <div
+                key={src}
+                className={`overflow-hidden rounded-[1.8rem] border border-white/30 bg-white/10 shadow-[0_20px_45px_rgba(15,23,42,0.2)] ${index % 2 === 1 ? 'translate-y-6' : ''}`}
+              >
+                <img src={src} alt="" className="h-full w-full object-cover" loading="lazy" />
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── Features ────────────────────────────────────────────── */}
-      <section className="bg-white border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {FEATURES.map(({ icon: Icon, title, desc }) => (
-              <div key={title} className="text-center">
-                <div className="w-12 h-12 bg-brand-50 rounded-xl flex items-center justify-center mx-auto mb-4">
-                  <Icon size={22} className="text-brand-700" />
-                </div>
-                <h3 className="font-semibold text-gray-800 mb-1">{title}</h3>
-                <p className="text-sm text-gray-500 leading-relaxed">{desc}</p>
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {FEATURES.map(({ icon: Icon, title, desc }) => (
+            <div key={title} className="card p-6 bg-white/80">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-50 to-orange-100">
+                <Icon size={22} className="text-brand-700" />
               </div>
-            ))}
-          </div>
+              <h3 className="text-lg font-bold text-slate-900">{title}</h3>
+              <p className="mt-2 text-sm leading-6 text-slate-500">{desc}</p>
+            </div>
+          ))}
         </div>
       </section>
 
-      {/* ── Categories ──────────────────────────────────────────── */}
       {categories.length > 0 && (
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
-          <div className="flex items-center justify-between mb-8">
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="mb-8 flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">Shop by Category</h2>
-              <p className="text-gray-500 text-sm mt-1">Find exactly what you're looking for</p>
+              <h2 className="text-3xl font-black tracking-tight text-slate-900">Shop by Category</h2>
+              <p className="mt-1 text-sm text-slate-500">Jump into the format that fits the moment.</p>
             </div>
           </div>
+
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-            {categories.map(cat => (
-              <Link
-                key={cat.id}
-                to={`/shop?category=${cat.slug}`}
-                className="group card hover:shadow-md transition-shadow text-center overflow-hidden"
-              >
-                <div className="aspect-square overflow-hidden bg-gray-100">
-                  {cat.imageUrl
-                    ? <img src={cat.imageUrl} alt={cat.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                    : <div className="w-full h-full bg-brand-50" />
-                  }
+            {categories.map((category) => (
+              <Link key={category.id} to={`/shop?category=${category.slug}`} className="card group">
+                <div className="aspect-square overflow-hidden bg-slate-100">
+                  {category.imageUrl ? (
+                    <img src={category.imageUrl} alt={category.name} className="h-full w-full object-cover transition duration-500 group-hover:scale-110" />
+                  ) : (
+                    <div className="h-full w-full bg-brand-50" />
+                  )}
                 </div>
-                <div className="p-3">
-                  <p className="font-semibold text-sm text-gray-800 group-hover:text-brand-700 transition-colors">{cat.name}</p>
-                  <p className="text-xs text-gray-400">{cat._count?.products ?? 0} products</p>
+                <div className="p-4">
+                  <p className="font-bold text-slate-900 transition group-hover:text-brand-700">{category.name}</p>
+                  <p className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-400">{category._count?.products ?? 0} products</p>
                 </div>
               </Link>
             ))}
@@ -117,48 +114,48 @@ export default function Home() {
         </section>
       )}
 
-      {/* ── Featured Products ────────────────────────────────────── */}
-      <section className="bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900">Featured Products</h2>
-              <p className="text-gray-500 text-sm mt-1">Bestsellers loved by thousands</p>
-            </div>
-            <Link to="/shop" className="text-brand-700 font-semibold text-sm flex items-center gap-1 hover:gap-2 transition-all">
-              View All <ArrowRight size={16} />
-            </Link>
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h2 className="text-3xl font-black tracking-tight text-slate-900">Featured Products</h2>
+            <p className="mt-1 text-sm text-slate-500">A brighter mix of customisable crowd-pleasers.</p>
           </div>
-
-          {loading ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5">
-              {[...Array(8)].map((_, i) => (
-                <div key={i} className="card animate-pulse">
-                  <div className="aspect-square bg-gray-200" />
-                  <div className="p-4 space-y-2">
-                    <div className="h-3 bg-gray-200 rounded w-1/2" />
-                    <div className="h-4 bg-gray-200 rounded w-3/4" />
-                    <div className="h-4 bg-gray-200 rounded w-1/4 mt-3" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5">
-              {products.map(p => <ProductCard key={p.id} product={p} />)}
-            </div>
-          )}
+          <Link to="/shop" className="inline-flex items-center gap-2 text-sm font-semibold text-brand-700 hover:gap-3 transition-all">
+            View All <ArrowRight size={16} />
+          </Link>
         </div>
+
+        {loading ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5">
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="card animate-pulse">
+                <div className="aspect-square bg-gray-200" />
+                <div className="p-4 space-y-2">
+                  <div className="h-3 rounded bg-gray-200 w-1/2" />
+                  <div className="h-4 rounded bg-gray-200 w-3/4" />
+                  <div className="h-4 rounded bg-gray-200 w-1/4 mt-3" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5">
+            {products.map((product) => <ProductCard key={product.id} product={product} />)}
+          </div>
+        )}
       </section>
 
-      {/* ── CTA Banner ───────────────────────────────────────────── */}
-      <section className="bg-brand-700 text-white">
-        <div className="max-w-4xl mx-auto px-4 py-14 text-center">
-          <h2 className="text-3xl font-bold mb-3">Ready to create something special?</h2>
-          <p className="text-blue-100 mb-8">Join thousands of happy customers who've made their gifts unforgettable.</p>
-          <Link to="/register" className="bg-white text-brand-700 font-bold px-8 py-3 rounded-xl hover:bg-yellow-300 transition-colors inline-flex items-center gap-2">
-            Get Started Free <ArrowRight size={18} />
-          </Link>
+      <section className="pb-16">
+        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+          <div className="overflow-hidden rounded-[2rem] bg-[linear-gradient(135deg,#f97316_0%,#ec4899_45%,#1f4e79_100%)] px-8 py-12 text-center text-white shadow-[0_24px_70px_rgba(15,23,42,0.2)]">
+            <h2 className="text-3xl font-black tracking-tight">Ready to build a gift that feels unmistakably yours?</h2>
+            <p className="mx-auto mt-3 max-w-2xl text-white/80">
+              Start personalising now, schedule the delivery when you need it, and let the product preview do the convincing.
+            </p>
+            <Link to="/register" className="mt-8 inline-flex items-center gap-2 rounded-xl bg-white px-8 py-3 font-bold text-brand-700 transition hover:-translate-y-0.5 hover:bg-amber-200">
+              Get Started <ArrowRight size={18} />
+            </Link>
+          </div>
         </div>
       </section>
     </div>

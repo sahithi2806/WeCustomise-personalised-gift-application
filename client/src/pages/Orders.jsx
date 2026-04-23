@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { CheckCircle2, Clock3, Gift, MapPin, Package, ShoppingBag, Truck, XCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import api from '../utils/api'
+import ProductPreview from '../components/ProductPreview'
 
 const statusConfig = {
   PLACED: { label: 'Placed', icon: Clock3, tone: 'bg-amber-50 text-amber-700 border-amber-100' },
@@ -66,11 +67,7 @@ export default function Orders() {
     setCancellingId(orderId)
     try {
       await api.post(`/orders/${orderId}/cancel`)
-      setOrders((current) =>
-        current.map((order) =>
-          order.id === orderId ? { ...order, status: 'CANCELLED' } : order
-        )
-      )
+      setOrders((current) => current.map((order) => (order.id === orderId ? { ...order, status: 'CANCELLED' } : order)))
       toast.success('Order cancelled successfully.')
     } catch (error) {
       toast.error(error.response?.data?.error || 'Could not cancel this order.')
@@ -84,9 +81,7 @@ export default function Orders() {
       <div className="max-w-6xl mx-auto px-4 py-10 animate-pulse">
         <div className="h-8 bg-gray-200 rounded w-48 mb-8" />
         <div className="space-y-4">
-          {[1, 2, 3].map((item) => (
-            <div key={item} className="h-64 bg-gray-200 rounded-3xl" />
-          ))}
+          {[1, 2, 3].map((item) => <div key={item} className="h-64 bg-gray-200 rounded-3xl" />)}
         </div>
       </div>
     )
@@ -95,7 +90,7 @@ export default function Orders() {
   if (!orders.length) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-16 text-center">
-        <div className="w-16 h-16 rounded-2xl bg-brand-50 flex items-center justify-center mx-auto mb-5">
+        <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-50">
           <ShoppingBag className="text-brand-700" size={28} />
         </div>
         <h1 className="text-2xl font-bold text-gray-900 mb-2">No orders yet</h1>
@@ -111,8 +106,8 @@ export default function Orders() {
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex items-start justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">My Orders</h1>
-          <p className="text-sm text-gray-500 mt-1">Track progress, check delivery details, and manage orders after purchase.</p>
+          <h1 className="text-3xl font-black tracking-tight text-gray-900">My Orders</h1>
+          <p className="text-sm text-gray-500 mt-1">Track progress, review delivery details, and manage your orders after purchase.</p>
         </div>
         <Link to="/shop" className="hidden sm:inline-flex btn-outline text-sm">
           Continue Shopping
@@ -145,16 +140,23 @@ export default function Orders() {
                     <span className="text-sm text-gray-500">
                       Ordered on {new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </span>
+                    {order.isGift && (
+                      <span className="inline-flex items-center gap-2 rounded-full border border-fuchsia-200 bg-fuchsia-50 px-3 py-1 text-xs font-semibold text-fuchsia-700">
+                        <Gift size={13} />
+                        Scheduled gift
+                      </span>
+                    )}
                   </div>
 
                   <div>
                     <h2 className="text-lg font-bold text-gray-900">Order #{order.id.slice(0, 8).toUpperCase()}</h2>
-                    <p className="text-sm text-gray-500 mt-1">
-                      Payment: {order.paymentMethod} | {order.paymentStatus}
-                    </p>
+                    <p className="text-sm text-gray-500 mt-1">Payment: {order.paymentMethod} | {order.paymentStatus}</p>
                     {order.discount && (
-                      <p className="text-sm text-green-700 mt-1">
-                        Discount used: {order.discount.code}
+                      <p className="text-sm text-green-700 mt-1">Discount used: {order.discount.code}</p>
+                    )}
+                    {order.isGift && order.scheduledDeliveryAt && (
+                      <p className="text-sm text-fuchsia-700 mt-1">
+                        Scheduled for {new Date(order.scheduledDeliveryAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
                       </p>
                     )}
                   </div>
@@ -182,7 +184,7 @@ export default function Orders() {
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                       {timeline.map((step) => (
                         <div key={step.key} className="rounded-2xl bg-white border border-gray-100 px-4 py-3">
-                          <div className={`w-3 h-3 rounded-full mb-3 ${step.cancelled ? 'bg-rose-300' : step.complete ? 'bg-brand-700' : 'bg-gray-200'}`} />
+                          <div className={`mb-3 h-3 w-3 rounded-full ${step.cancelled ? 'bg-rose-300' : step.complete ? 'bg-brand-700' : 'bg-gray-200'}`} />
                           <p className={`text-sm font-medium ${step.active ? 'text-gray-900' : 'text-gray-500'}`}>{step.label}</p>
                           <p className="text-xs text-gray-400 mt-1">
                             {step.cancelled ? 'Order stopped' : step.complete ? 'Complete' : 'Pending'}
@@ -198,7 +200,7 @@ export default function Orders() {
                     <button
                       onClick={() => cancelOrder(order.id)}
                       disabled={cancellingId === order.id}
-                      className="px-4 py-2 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 transition-colors disabled:opacity-60"
+                      className="rounded-xl border border-red-200 px-4 py-2 text-red-600 transition-colors hover:bg-red-50 disabled:opacity-60"
                     >
                       {cancellingId === order.id ? 'Cancelling...' : 'Cancel Order'}
                     </button>
@@ -212,9 +214,9 @@ export default function Orders() {
                 </div>
               </div>
 
-              <div className="mt-6 border-t border-gray-100 pt-5 grid gap-3">
+              <div className="mt-6 grid gap-3 border-t border-gray-100 pt-5">
                 <div className="rounded-2xl bg-gray-50 px-4 py-4">
-                  <p className="text-xs uppercase tracking-[0.18em] text-gray-400 mb-2 flex items-center gap-2">
+                  <p className="mb-2 flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-gray-400">
                     <MapPin size={13} /> Delivery Address
                   </p>
                   <p className="text-sm font-medium text-gray-900">{address.fullName}</p>
@@ -222,20 +224,20 @@ export default function Orders() {
                     {[address.street, address.city, address.state, address.pincode].filter(Boolean).join(', ')}
                   </p>
                   <p className="text-sm text-gray-500 mt-1">{address.phone}</p>
+                  {order.isGift && (
+                    <div className="mt-3 rounded-2xl border border-fuchsia-100 bg-white px-4 py-3 text-sm text-fuchsia-800">
+                      <p className="font-semibold">Gift for {order.recipientName}</p>
+                      {order.giftMessage && <p className="mt-1 text-fuchsia-700">{order.giftMessage}</p>}
+                    </div>
+                  )}
                 </div>
 
                 {order.items.map((item) => (
                   <div key={item.id} className="flex items-center gap-4">
-                    <img
-                      src={item.product.imageUrl}
-                      alt={item.product.name}
-                      className="w-16 h-16 rounded-2xl object-cover bg-gray-100"
-                    />
+                    <ProductPreview product={item.product} customisation={item.customisation} className="h-16 w-16 rounded-2xl bg-gray-100 shrink-0" />
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-gray-900">{item.product.name}</p>
-                      <p className="text-sm text-gray-500 mt-1">
-                        Qty {item.quantity} | {formatCurrency(item.price)} each
-                      </p>
+                      <p className="text-sm text-gray-500 mt-1">Qty {item.quantity} | {formatCurrency(item.price)} each</p>
                       {item.customisation && (
                         <p className="text-xs text-brand-700 mt-1">Custom design saved with this item</p>
                       )}

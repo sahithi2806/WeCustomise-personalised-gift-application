@@ -14,6 +14,7 @@ import Login from './pages/Login'
 import Orders from './pages/Orders'
 import Register from './pages/Register'
 import NotFound from './pages/NotFound'
+import AdminDashboard from './pages/AdminDashboard'
 
 function PageSpinner() {
   return (
@@ -56,6 +57,7 @@ function AppRoutes() {
       <Route path="/checkout" element={<ProtectedRoute><Layout><Checkout /></Layout></ProtectedRoute>} />
       <Route path="/orders" element={<ProtectedRoute><Layout><Orders /></Layout></ProtectedRoute>} />
       <Route path="/gifts" element={<ProtectedRoute><Layout><Gifts /></Layout></ProtectedRoute>} />
+      <Route path="/admin" element={<ProtectedRoute adminOnly><Layout><AdminDashboard /></Layout></ProtectedRoute>} />
 
       {/* 404 */}
       <Route path="*" element={<Layout><NotFound /></Layout>} />
