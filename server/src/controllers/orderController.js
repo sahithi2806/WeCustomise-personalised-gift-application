@@ -1,5 +1,6 @@
 const { getPrisma } = require('../utils/prisma');
 const { sendOrderConfirmation } = require('../utils/mailer');
+const { formatOrder } = require('../utils/serializers');
 
 const VALID_PAYMENT_METHODS = ['UPI', 'CARD', 'COD'];
 const REQUIRED_ADDRESS_FIELDS = ['fullName', 'phone', 'street', 'city', 'state', 'pincode'];
@@ -14,7 +15,7 @@ function buildOrderSummary(cartItems, discountAmt) {
 
 async function createOrder(req, res) {
   const prisma = getPrisma();
-  const { paymentMethod, address, discountCode, paymentId } = req.body;
+  const { paymentMethod, address, discountCode, paymentId, giftDelivery } = req.body;
 
   if (!VALID_PAYMENT_METHODS.includes(paymentMethod)) {
     return res.status(400).json({ error: 'Invalid payment method.' });
@@ -31,6 +32,26 @@ async function createOrder(req, res) {
 
   if (paymentMethod !== 'COD' && !String(paymentId || '').trim()) {
     return res.status(400).json({ error: 'Payment reference is required for online payments.' });
+  }
+
+  const isGift = Boolean(giftDelivery?.enabled);
+  const recipientName = String(giftDelivery?.recipientName || '').trim();
+  const giftMessage = String(giftDelivery?.message || '').trim();
+  const scheduledDeliveryAt = giftDelivery?.scheduledDate ? new Date(giftDelivery.scheduledDate) : null;
+
+  if (isGift) {
+    if (!recipientName) {
+      return res.status(400).json({ error: 'Recipient name is required for a scheduled gift delivery.' });
+    }
+
+    if (!scheduledDeliveryAt || Number.isNaN(scheduledDeliveryAt.getTime())) {
+      return res.status(400).json({ error: 'Choose a valid scheduled delivery date.' });
+    }
+
+    const now = new Date();
+    if (scheduledDeliveryAt <= now) {
+      return res.status(400).json({ error: 'Scheduled delivery date must be in the future.' });
+    }
   }
 
   // Get cart
@@ -91,6 +112,10 @@ async function createOrder(req, res) {
         discountAmt,
         discountId,
         address: typeof address === 'string' ? address : JSON.stringify(address),
+        isGift,
+        recipientName: isGift ? recipientName : null,
+        giftMessage: isGift && giftMessage ? giftMessage : null,
+        scheduledDeliveryAt: isGift ? scheduledDeliveryAt : null,
         items: {
           create: cartItems.map(i => ({
             productId: i.productId,
@@ -102,6 +127,18 @@ async function createOrder(req, res) {
       },
       include: { items: { include: { product: true } }, discount: true },
     });
+
+    if (isGift) {
+      await tx.giftSchedule.create({
+        data: {
+          userId: req.user.id,
+          occasion: 'Scheduled order delivery',
+          scheduledDate: scheduledDeliveryAt,
+          message: giftMessage || `Delivery planned for order ${order.id.slice(0, 8).toUpperCase()}`,
+          recipientName,
+        },
+      });
+    }
 
     // Decrement stock
     for (const item of cartItems) {
@@ -115,7 +152,7 @@ async function createOrder(req, res) {
     await tx.cartItem.deleteMany({ where: { userId: req.user.id } });
 
     return {
-      ...order,
+      ...formatOrder(order),
       summary: {
         subtotal,
         shipping,
@@ -135,16 +172,17 @@ async function getOrders(req, res) {
   const prisma = getPrisma();
   const orders = await prisma.order.findMany({
     where: { userId: req.user.id },
-    include: { items: { include: { product: { select: { name: true, imageUrl: true } } } }, discount: true },
+    include: { items: { include: { product: { include: { category: true } } } }, discount: true },
     orderBy: { createdAt: 'desc' },
   });
 
   const withSummary = orders.map((order) => {
-    const subtotal = order.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const formattedOrder = formatOrder(order);
+    const subtotal = formattedOrder.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
     const shipping = Math.max(order.totalAmount + (order.discountAmt || 0) - subtotal, 0);
 
     return {
-      ...order,
+      ...formattedOrder,
       summary: {
         subtotal,
         shipping,
@@ -161,16 +199,17 @@ async function getOrder(req, res) {
   const prisma = getPrisma();
   const order = await prisma.order.findFirst({
     where: { id: req.params.id, userId: req.user.id },
-    include: { items: { include: { product: true } }, discount: true },
+    include: { items: { include: { product: { include: { category: true } } } }, discount: true },
   });
   if (!order) return res.status(404).json({ error: 'Order not found.' });
 
-  const subtotal = order.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const formattedOrder = formatOrder(order);
+  const subtotal = formattedOrder.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const shipping = Math.max(order.totalAmount + (order.discountAmt || 0) - subtotal, 0);
 
   res.json({
     order: {
-      ...order,
+      ...formattedOrder,
       summary: {
         subtotal,
         shipping,

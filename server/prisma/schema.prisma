@@ -114,6 +114,10 @@ model Order {
   paymentId     String?
   notes         String?
   address       String
+  isGift        Boolean       @default(false)
+  recipientName String?
+  giftMessage   String?
+  scheduledDeliveryAt DateTime?
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 

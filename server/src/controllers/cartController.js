@@ -1,9 +1,5 @@
 const { getPrisma } = require('../utils/prisma');
-
-function normaliseCustomisation(customisation) {
-  if (!customisation) return null;
-  return typeof customisation === 'string' ? customisation : JSON.stringify(customisation);
-}
+const { formatCartItem, serialiseCustomisation } = require('../utils/serializers');
 
 async function getCart(req, res) {
   const prisma = getPrisma();
@@ -13,14 +9,14 @@ async function getCart(req, res) {
   });
 
   const total = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
-  res.json({ items, total });
+  res.json({ items: items.map(formatCartItem), total });
 }
 
 async function addToCart(req, res) {
   const prisma = getPrisma();
   const { productId, quantity = 1, customisation } = req.body;
   const parsedQuantity = Number(quantity) || 1;
-  const normalisedCustomisation = normaliseCustomisation(customisation);
+  const normalisedCustomisation = serialiseCustomisation(customisation);
 
   const product = await prisma.product.findUnique({ where: { id: productId } });
   if (!product) return res.status(404).json({ error: 'Product not found.' });
@@ -53,7 +49,7 @@ async function addToCart(req, res) {
     });
   }
 
-  res.status(201).json({ item, message: 'Added to cart!' });
+  res.status(201).json({ item: formatCartItem(item), message: 'Added to cart!' });
 }
 
 async function updateCartItem(req, res) {
@@ -81,7 +77,7 @@ async function updateCartItem(req, res) {
     data: { quantity },
     include: { product: true },
   });
-  res.json({ item: updatedItem });
+  res.json({ item: formatCartItem(updatedItem) });
 }
 
 async function removeFromCart(req, res) {
