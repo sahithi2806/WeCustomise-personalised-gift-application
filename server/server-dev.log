@@ -1,0 +1,6 @@
+
+> wecustomise-server@1.0.0 dev
+> nodemon src/index.js
+
+'nodemon' is not recognized as an internal or external command,
+operable program or batch file.
