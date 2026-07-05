@@ -75,7 +75,7 @@ export default function Navbar() {
               <div className="relative">
                 <button
                   onClick={() => setDropOpen((open) => !open)}
-                  className="flex items-center gap-3 rounded-2xl border border-white/70 bg-white/80 px-3 py-2 shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-50"
+                  className="flex items-center gap-3 rounded-2xl border border-white/70 bg-white px-3 py-2 shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-50"
                 >
                   <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#1f4e79_0%,#ec4899_100%)] text-sm font-bold text-white shadow-[0_10px_24px_rgba(31,78,121,0.22)]">
                     {user.name[0].toUpperCase()}
@@ -89,7 +89,7 @@ export default function Navbar() {
                 {dropOpen && (
                   <>
                     <div className="fixed inset-0 z-10" onClick={() => setDropOpen(false)} />
-                    <div className="absolute right-0 z-20 mt-3 w-60 overflow-hidden rounded-[1.5rem] border border-white/70 bg-white/92 py-2 shadow-[0_20px_50px_rgba(15,23,42,0.12)] backdrop-blur">
+                    <div className="absolute right-0 z-20 mt-3 w-60 overflow-hidden rounded-[1.5rem] border border-white/70 bg-white py-2 shadow-[0_20px_50px_rgba(15,23,42,0.12)] backdrop-blur">
                       <div className="border-b border-slate-100 px-5 py-3">
                         <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Signed in as</p>
                         <p className="mt-1 truncate text-sm font-semibold text-slate-800">{user.email}</p>

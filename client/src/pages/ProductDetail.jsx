@@ -181,7 +181,7 @@ export default function ProductDetail() {
       </nav>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-10 mb-10">
-        <div className="space-y-4">
+        <div className="space-y-4 md:sticky md:top-24 md:self-start">
           <ProductPreview
             product={product}
             customisation={customisation}
@@ -265,14 +265,10 @@ export default function ProductDetail() {
                   }
                   setCustomiseMode((value) => !value)
                 }}
-                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-semibold text-sm border-2 transition-all ${
-                  customiseMode
-                    ? 'bg-brand-700 text-white border-brand-700'
-                    : 'border-brand-700 text-brand-700 hover:bg-brand-50'
-                }`}
+                className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-[#f05b72] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#d94761]"
               >
                 <Paintbrush size={16} />
-                {customiseMode ? 'Close Studio' : customisation ? 'Edit Design' : 'Customise This'}
+                {customiseMode ? 'Close customiser' : customisation ? 'Edit my design' : 'Start customising'}
               </button>
             )}
 
@@ -292,16 +288,32 @@ export default function ProductDetail() {
             </div>
           )}
 
-          <div className="mt-5 grid gap-3 border-t border-gray-100 pt-5 text-sm text-gray-500">
-            <div className="flex items-center gap-2">
-              <Package size={14} className="text-brand-500" /> Free shipping on orders over Rs. 999
+          {/* Trust builders (Phase 2) */}
+          <div className="mt-5 grid gap-3 border-t border-gray-100 pt-5">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="badge bg-brand-50 text-brand-700 gap-2 px-3 py-1 border border-brand-100">
+                <Sparkles size={14} /> Custom preview
+              </span>
+              <span className="badge bg-emerald-50 text-emerald-700 gap-2 px-3 py-1 border border-emerald-100">
+                <Package size={14} /> Delivery in 3–5 days
+              </span>
+              <span className="badge bg-slate-100 text-slate-700 gap-2 px-3 py-1 border border-slate-200">
+                <Paintbrush size={14} /> Print-safe placement
+              </span>
             </div>
-            <div className="rounded-2xl border border-brand-100 bg-brand-50/70 px-4 py-3 text-brand-800">
-              Your artwork now previews on the product surface instead of replacing the whole product image.
+
+            <div className="rounded-2xl border border-brand-100 bg-brand-50/70 px-4 py-3 text-sm text-brand-800">
+              Your artwork now previews on the product surface—so you can edit with confidence before checkout.
             </div>
           </div>
         </div>
       </div>
+
+      {product.isCustomisable && !customiseMode && (
+        <button onClick={() => setCustomiseMode(true)} className="fixed inset-x-4 bottom-4 z-40 rounded-2xl bg-[#f05b72] px-5 py-4 font-bold text-white shadow-2xl md:hidden">
+          Customize Now
+        </button>
+      )}
 
       {customiseMode && product.isCustomisable && (
         <div className="card p-6 mb-10 border-2 border-brand-100 bg-gradient-to-br from-brand-50/50 to-white">
@@ -310,8 +322,8 @@ export default function ProductDetail() {
               <Paintbrush size={18} className="text-white" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-gray-900">Customisation Studio</h2>
-              <p className="text-xs text-gray-500">Build your design, save it, then add the final product to cart.</p>
+              <h2 className="text-lg font-bold text-gray-900">Make it yours</h2>
+              <p className="text-xs text-gray-500">Add text or artwork and watch it update on the actual product.</p>
             </div>
           </div>
           <CustomisationStudio product={product} onSave={handleCustomisedSave} />
@@ -319,6 +331,58 @@ export default function ProductDetail() {
       )}
 
       <section>
+        {/* Customer gallery + photo reviews placeholder (Phase 2) */}
+        <div className="mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-5">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">Customer gallery</h2>
+              <p className="text-sm text-gray-500 mt-1">Photo reviews and real-life gifting inspiration.</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="badge bg-slate-100 text-slate-700 border border-slate-200 px-3 py-1">
+                <Sparkles size={14} /> Verified buyers
+              </span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-3">
+            {[...Array(6)].map((_, idx) => (
+              <div
+                key={idx}
+                className="aspect-square rounded-2xl border border-white/70 bg-white/80 overflow-hidden shadow-sm"
+              >
+                {/* Photo placeholder (never broken) */}
+                <img
+                  alt="Customer gallery placeholder"
+                  className="h-full w-full object-cover"
+                  src={`data:image/svg+xml;utf8,${encodeURIComponent(`
+                    <svg xmlns='http://www.w3.org/2000/svg' width='400' height='400'>
+                      <defs>
+                        <linearGradient id='g' x1='0' y1='0' x2='1' y2='1'>
+                          <stop offset='0%' stop-color='#fff1f2'/>
+                          <stop offset='45%' stop-color='#ffffff'/>
+                          <stop offset='100%' stop-color='#fff7ed'/>
+                        </linearGradient>
+                        <filter id='s' x='-20%' y='-20%' width='140%' height='140%'>
+                          <feDropShadow dx='0' dy='10' stdDeviation='16' flood-color='rgba(31,78,121,0.18)'/>
+                        </filter>
+                      </defs>
+                      <rect width='400' height='400' fill='url(#g)'/>
+                      <circle cx='200' cy='175' r='62' fill='rgba(196,63,91,0.10)' filter='url(#s)'/>
+                      <text x='200' y='235' font-family='Inter, Arial' font-size='22' font-weight='700' text-anchor='middle' fill='#c43f5b' opacity='0.75'>
+                        WeCustomise
+                      </text>
+                      <g transform='translate(170 135)' opacity='0.85' fill='none' stroke='#1F4E79' stroke-width='8' stroke-linecap='round'>
+                        <path d='M30 0 L34 14 L50 17 L34 20 L30 34 L26 20 L10 17 L26 14 Z'/>
+                      </g>
+                    </svg>
+                  `)}`}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+
         <h2 className="text-xl font-bold text-gray-900 mb-6">Customer Reviews</h2>
         {user && (
           <form onSubmit={submitReview} className="card p-6 mb-8">

@@ -4,6 +4,7 @@ import { ArrowLeft, BadgePercent, CalendarClock, CreditCard, Gift, MapPin, Shiel
 import toast from 'react-hot-toast'
 import api from '../utils/api'
 import { useCart } from '../contexts/CartContext'
+import { useAuth } from '../contexts/AuthContext'
 import ProductPreview from '../components/ProductPreview'
 
 const SHIPPING_THRESHOLD = 999
@@ -24,7 +25,10 @@ const initialGiftDelivery = {
   recipientName: '',
   message: '',
   scheduledDate: '',
+  wrapping: 'Classic ivory',
 }
+
+const wrappingOptions = ['Classic ivory', 'Coral celebration', 'Navy premium']
 
 const paymentOptions = [
   { id: 'UPI', label: 'UPI', icon: Smartphone, note: 'Fast online payment' },
@@ -52,6 +56,7 @@ function getMinimumScheduleValue() {
 
 export default function Checkout() {
   const { items, total, loading, fetchCart } = useCart()
+  const { user } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -105,6 +110,26 @@ export default function Checkout() {
     setDiscountState(null)
   }
 
+  const submitOrder = async (paymentId) => {
+    const payload = {
+      paymentMethod,
+      address,
+      discountCode: discountState?.code || undefined,
+      paymentId,
+      giftDelivery: giftDelivery.enabled ? giftDelivery : undefined,
+    }
+
+    const { data } = await api.post('/orders', payload)
+    await fetchCart()
+    toast.success('Order placed successfully.')
+    navigate('/orders', {
+      state: {
+        highlightOrderId: data.order.id,
+        fromCheckout: true,
+      },
+    })
+  }
+
   const placeOrder = async (event) => {
     event.preventDefault()
 
@@ -126,26 +151,69 @@ export default function Checkout() {
 
     setPlacingOrder(true)
     try {
-      const payload = {
-        paymentMethod,
-        address,
-        discountCode: discountState?.code || undefined,
-        paymentId: paymentMethod === 'COD' ? undefined : buildMockPaymentId(paymentMethod),
-        giftDelivery: giftDelivery.enabled ? giftDelivery : undefined,
+      if (paymentMethod === 'COD') {
+        await submitOrder(undefined)
+        return
       }
 
-      const { data } = await api.post('/orders', payload)
-      await fetchCart()
-      toast.success('Order placed successfully.')
-      navigate('/orders', {
-        state: {
-          highlightOrderId: data.order.id,
-          fromCheckout: true,
-        },
+      const { data: paymentData } = await api.post('/payments/create-order', {
+        amount: Math.round(grandTotal),
+        receipt: `wc_${Date.now()}`,
       })
+
+      if (paymentData.gateway === 'demo' || !window.Razorpay) {
+        await submitOrder(buildMockPaymentId(paymentMethod))
+        return
+      }
+
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_demo',
+        amount: paymentData.order.amount,
+        currency: paymentData.order.currency,
+        name: 'WeCustomise',
+        description: 'Custom gift order payment',
+        order_id: paymentData.order.id,
+        handler: async (response) => {
+          try {
+            // Verify payment signature on backend before placing order
+            const verifyPayload = {
+              razorpay_order_id: paymentData.order.id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            }
+
+            const { data: verifyData } = await api.post('/payments/verify', verifyPayload)
+
+            if (!verifyData?.valid) {
+              toast.error('Payment verification failed. Please try again.')
+              setPlacingOrder(false)
+              return
+            }
+
+            await submitOrder(response.razorpay_payment_id)
+          } catch (error) {
+            toast.error(error.response?.data?.error || 'Payment succeeded but verification/order step failed.')
+            setPlacingOrder(false)
+          }
+        },
+        prefill: {
+          name: address.fullName || user?.name || 'Customer',
+          email: user?.email || 'customer@wecustomise.com',
+          contact: address.phone || '',
+        },
+        theme: { color: '#1F4E79' },
+        modal: {
+          ondismiss: () => {
+            setPlacingOrder(false)
+            toast.error('Payment was cancelled.')
+          },
+        },
+      }
+
+      const razorpay = new window.Razorpay(options)
+      razorpay.open()
     } catch (error) {
       toast.error(error.response?.data?.error || 'Could not place your order.')
-    } finally {
       setPlacingOrder(false)
     }
   }
@@ -237,6 +305,16 @@ export default function Checkout() {
 
             {giftDelivery.enabled && (
               <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="sm:col-span-2">
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Gift wrapping</p>
+                  <div className="grid gap-2 sm:grid-cols-3">
+                    {wrappingOptions.map((option) => (
+                      <button key={option} type="button" onClick={() => updateGiftDelivery('wrapping', option)} className={`rounded-xl border px-3 py-3 text-sm font-semibold ${giftDelivery.wrapping === option ? 'border-[#f05b72] bg-[#fff0ef] text-[#c43f5b]' : 'border-slate-200 bg-white text-slate-600'}`}>
+                        {option}
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 <input
                   className="input"
                   placeholder="Recipient name"
@@ -361,8 +439,11 @@ export default function Checkout() {
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-sm text-gray-900 line-clamp-2">{item.product.name}</p>
                     <p className="text-xs text-gray-500 mt-1">Qty {item.quantity}</p>
+                    {item.customisation?.designName && (
+                      <p className="text-xs text-brand-700 mt-1">Design: {item.customisation.designName}</p>
+                    )}
                     {item.customisation?.layers?.length > 0 && (
-                      <p className="text-xs text-brand-700 mt-1">Custom design attached</p>
+                      <p className="text-xs text-gray-500 mt-1">Custom design attached</p>
                     )}
                   </div>
                   <div className="text-sm font-semibold text-gray-900">
