@@ -175,12 +175,6 @@ POST  /api/orders/:id/cancel
 
 ---
 
-## Screenshots
-
-(Add UI screenshots here)
-
----
-
 ## Future Improvements
 
 * Payment gateway integration (Razorpay / Stripe)
