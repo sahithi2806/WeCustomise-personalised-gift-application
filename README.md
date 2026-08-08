@@ -11,6 +11,7 @@ A full-stack e-commerce web application that allows users to design and purchase
 * Database: Prisma ORM (SQLite by default, configurable to PostgreSQL)
 * Authentication: JWT-based auth
 * State Management: React Context API
+* Payment Gateway: Razorpay
 
 ---
 
@@ -20,6 +21,7 @@ A full-stack e-commerce web application that allows users to design and purchase
 * Product customisation (text, colors, image upload)
 * Cart management system
 * Checkout flow with multiple payment options (UPI, Card, COD)
+* Razorpay payment gateway integration
 * Order tracking and history
 * Gift scheduling system
 * Product reviews (after purchase)
@@ -33,6 +35,7 @@ A full-stack e-commerce web application that allows users to design and purchase
 
 * Node.js 18+
 * (Optional) PostgreSQL if switching from SQLite
+* Razorpay account and API credentials
 
 ---
 
@@ -44,7 +47,7 @@ cd server
 npm install
 
 cp .env.example .env
-# Set DATABASE_URL and JWT_SECRET
+# Set DATABASE_URL, JWT_SECRET, and Razorpay credentials
 
 npx prisma generate
 npx prisma migrate dev --name init
@@ -58,11 +61,14 @@ npm run dev
 
 ### Minimum `.env` values:
 
-```
+```env
 DATABASE_URL="file:./dev.db"
 JWT_SECRET="your_secret_key"
 PORT=5000
 CLIENT_URL="http://localhost:5173"
+
+RAZORPAY_KEY_ID="your_razorpay_key_id"
+RAZORPAY_KEY_SECRET="your_razorpay_key_secret"
 ```
 
 ---
@@ -105,6 +111,7 @@ Discount Codes:
 | Product Browsing & Filtering | Complete    |
 | Customisation Engine         | Complete    |
 | Cart & Checkout              | Complete    |
+| Razorpay Payment Integration | Complete    |
 | Orders & Reviews             | Complete    |
 | Gift Scheduling              | Complete    |
 | Admin Features               | In Progress |
@@ -114,7 +121,7 @@ Discount Codes:
 
 ## Project Structure
 
-```
+```text
 wecustomise/
 ├── server/
 │   ├── prisma/
@@ -142,7 +149,7 @@ wecustomise/
 
 ### Auth
 
-```
+```text
 POST  /api/auth/register
 POST  /api/auth/login
 GET   /api/auth/me
@@ -150,7 +157,7 @@ GET   /api/auth/me
 
 ### Products
 
-```
+```text
 GET   /api/products
 GET   /api/products/:id
 GET   /api/products/categories
@@ -158,7 +165,7 @@ GET   /api/products/categories
 
 ### Cart
 
-```
+```text
 GET   /api/cart
 POST  /api/cart
 PATCH /api/cart/:id
@@ -167,7 +174,7 @@ DELETE /api/cart/:id
 
 ### Orders
 
-```
+```text
 POST  /api/orders
 GET   /api/orders
 POST  /api/orders/:id/cancel
@@ -177,7 +184,6 @@ POST  /api/orders/:id/cancel
 
 ## Future Improvements
 
-* Payment gateway integration (Razorpay / Stripe)
 * Cloud image storage (Cloudinary)
 * Performance optimisations
 * Mobile responsiveness improvements
@@ -190,9 +196,10 @@ POST  /api/orders/:id/cancel
 * Default database uses SQLite (`dev.db`)
 * Easily switch to PostgreSQL via Prisma config
 * JWT stored in localStorage for authentication
+* Razorpay is integrated for online payment processing
 
 ---
 
 ## Author
 
-Developed as a full-stack engineering project demonstrating real-world e-commerce architecture with customisation capabilities.
+Developed as a full-stack engineering project demonstrating real-world e-commerce architecture with customisation capabilities and integrated online payment processing.
