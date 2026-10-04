@@ -107,7 +107,7 @@ export default function ProductDetail() {
       await addToCart(product.id, qty, customisation || null)
       toast.success(`${product.name} added to cart!`)
     } catch (error) {
-      toast.error(error.response?.data?.error || 'Could not add to cart.')
+      toast.error(error.userMessage || 'Could not add to cart.')
     } finally {
       setAdding(false)
     }
@@ -143,7 +143,7 @@ export default function ProductDetail() {
       setRating(0)
       setComment('')
     } catch (error) {
-      toast.error(error.response?.data?.error || 'Failed to submit review.')
+      toast.error(error.userMessage || 'Failed to submit review.')
     } finally {
       setReviewing(false)
     }

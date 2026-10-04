@@ -33,7 +33,7 @@ export default function Register() {
       toast.success(`Welcome to WeCustomise, ${user.name.split(' ')[0]}! 🎉`)
       navigate('/')
     } catch (err) {
-      setError(err.response?.data?.error || 'Registration failed. Please try again.')
+      setError(err.userMessage || 'Registration failed. Please try again.')
     } finally {
       setLoading(false)
     }

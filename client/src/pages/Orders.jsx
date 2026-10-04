@@ -54,7 +54,7 @@ export default function Orders() {
         const { data } = await api.get('/orders')
         setOrders(data.orders)
       } catch (error) {
-        toast.error(error.response?.data?.error || 'Could not load your orders.')
+        toast.error(error.userMessage || 'Could not load your orders.')
       } finally {
         setLoading(false)
       }
@@ -70,7 +70,7 @@ export default function Orders() {
       setOrders((current) => current.map((order) => (order.id === orderId ? { ...order, status: 'CANCELLED' } : order)))
       toast.success('Order cancelled successfully.')
     } catch (error) {
-      toast.error(error.response?.data?.error || 'Could not cancel this order.')
+      toast.error(error.userMessage || 'Could not cancel this order.')
     } finally {
       setCancellingId(null)
     }

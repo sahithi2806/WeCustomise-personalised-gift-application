@@ -1,5 +1,6 @@
 const { getPrisma } = require('../utils/prisma');
 const { formatCartItem, serialiseCustomisation } = require('../utils/serializers');
+const { round2 } = require('../utils/money');
 
 async function getCart(req, res) {
   const prisma = getPrisma();
@@ -8,7 +9,7 @@ async function getCart(req, res) {
     include: { product: { include: { category: true } } },
   });
 
-  const total = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+  const total = round2(items.reduce((sum, item) => sum + item.product.price * item.quantity, 0));
   res.json({ items: items.map(formatCartItem), total });
 }
 

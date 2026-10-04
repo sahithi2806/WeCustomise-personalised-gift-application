@@ -1,13 +1,11 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { Trash2, ShoppingBag, ArrowRight, Minus, Plus, Sparkles, Tag } from 'lucide-react'
 import { useCart } from '../contexts/CartContext'
-import { useAuth } from '../contexts/AuthContext'
 import ProductPreview from '../components/ProductPreview'
 import toast from 'react-hot-toast'
 
 export default function Cart() {
   const { items, total, updateItem, removeItem, loading } = useCart()
-  const { user } = useAuth()
   const navigate = useNavigate()
 
   const handleQty = async (item, delta) => {
@@ -25,7 +23,8 @@ export default function Cart() {
     toast('Item removed from cart')
   }
 
-  if (!user) return null
+  // ProtectedRoute already gates this page, so a null user here means auth is
+// still resolving — rendering nothing flashes a blank white page.
 
   if (loading) {
     return (

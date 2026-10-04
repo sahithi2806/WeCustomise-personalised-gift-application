@@ -144,7 +144,7 @@ export default function Navbar() {
       </div>
 
       {menuOpen && (
-        <div className="border-t border-white/70 bg-white/92 px-4 py-4 backdrop-blur md:hidden">
+        <div className="border-t border-white/70 bg-white/90 px-4 py-4 backdrop-blur md:hidden">
           <div className="space-y-2">
             {navLinks.map((link) => (
               <NavLink

@@ -14,6 +14,8 @@ const discountRoutes = require('./routes/discounts');
 const uploadRoutes = require('./routes/upload');
 const adminRoutes = require('./routes/admin');
 const giftRoutes = require('./routes/gifts');
+const paymentRoutes = require('./routes/payments');
+const { authenticate } = require('./middleware/auth');
 const { errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
@@ -32,6 +34,9 @@ app.use('/api/auth', authLimiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
+// Serve disk-stored uploads so the URLs handed back by /api/upload are reachable.
+app.use('/uploads', express.static(require('path').join(__dirname, '../uploads')));
+
 // Health check
 app.get('/health', (req, res) => res.json({ status: 'OK', app: 'WeCustomise API', version: '1.0' }));
 
@@ -45,6 +50,10 @@ app.use('/api/discounts', discountRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/gifts', giftRoutes);
+// Authenticated: /create-order takes a client-supplied amount, so it must not be
+// reachable anonymously. `authenticate` must come BEFORE the router — Express
+// runs mounts in order, so putting the router first lets it answer unauthenticated.
+app.use('/api/payments', authenticate, paymentRoutes);
 
 // 404
 app.use('*', (req, res) => res.status(404).json({ error: `Route ${req.originalUrl} not found` }));

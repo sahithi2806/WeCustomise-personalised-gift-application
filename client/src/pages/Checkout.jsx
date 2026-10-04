@@ -99,7 +99,7 @@ export default function Checkout() {
       toast.success(`${code} applied successfully.`)
     } catch (error) {
       setDiscountState(null)
-      toast.error(error.response?.data?.error || 'Unable to apply discount code.')
+      toast.error(error.userMessage || 'Unable to apply discount code.')
     } finally {
       setValidatingDiscount(false)
     }
@@ -192,7 +192,7 @@ export default function Checkout() {
 
             await submitOrder(response.razorpay_payment_id)
           } catch (error) {
-            toast.error(error.response?.data?.error || 'Payment succeeded but verification/order step failed.')
+            toast.error(error.userMessage || 'Payment succeeded but verification/order step failed.')
             setPlacingOrder(false)
           }
         },
@@ -213,7 +213,7 @@ export default function Checkout() {
       const razorpay = new window.Razorpay(options)
       razorpay.open()
     } catch (error) {
-      toast.error(error.response?.data?.error || 'Could not place your order.')
+      toast.error(error.userMessage || 'Could not place your order.')
       setPlacingOrder(false)
     }
   }
@@ -418,7 +418,7 @@ export default function Checkout() {
 
             {discountState && (
               <div className="mt-4 rounded-2xl border border-green-100 bg-green-50 px-4 py-3 text-sm text-green-700">
-                {discountState.code} saves you {formatCurrency(discountState.savings)} on this order.
+                {discountState.code} takes {formatCurrency(discountState.savings)} off your item subtotal. Shipping is not discounted.
               </div>
             )}
           </section>

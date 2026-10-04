@@ -1,24 +1,40 @@
 const { getPrisma } = require('../utils/prisma');
 
+const MAX_LIMIT = 100;
+
+function clampPaging(query) {
+  // These come straight from the query string, so a hostile or accidental
+  // `?limit=-1` / `?limit=999999` would otherwise reach `skip`/`take` directly.
+  const page = Math.max(1, Math.floor(Number(query.page) || 1));
+  const requested = Math.floor(Number(query.limit) || 12);
+  const limit = Math.min(Math.max(1, requested), MAX_LIMIT);
+  return { page, limit, skip: (page - 1) * limit };
+}
+
 async function getProducts(req, res) {
   const prisma = getPrisma();
-  const { category, search, customisable, page = 1, limit = 12 } = req.query;
-  const skip = (Number(page) - 1) * Number(limit);
+  const { category, search, customisable } = req.query;
+  const { page, limit, skip } = clampPaging(req.query);
 
   const where = {};
   if (category) where.category = { slug: category };
   if (customisable === 'true') where.isCustomisable = true;
-  if (search) where.OR = [
-    { name: { contains: search, mode: 'insensitive' } },
-    { description: { contains: search, mode: 'insensitive' } },
-  ];
+  if (search) {
+    // SQLite's LIKE is case-insensitive by default, so `contains` alone is
+    // correct here. Prisma's `mode: 'insensitive'` is Postgres-only and made
+    // SQLite throw PrismaClientValidationError, which broke all search.
+    where.OR = [
+      { name: { contains: search } },
+      { description: { contains: search } },
+    ];
+  }
 
   const [products, total] = await Promise.all([
     prisma.product.findMany({
       where,
       include: { category: true, reviews: { select: { rating: true } } },
       skip,
-      take: Number(limit),
+      take: limit,
       orderBy: { createdAt: 'desc' },
     }),
     prisma.product.count({ where }),
@@ -30,7 +46,7 @@ async function getProducts(req, res) {
     reviewCount: p.reviews.length,
   }));
 
-  res.json({ products: enriched, total, page: Number(page), pages: Math.ceil(total / Number(limit)) });
+  res.json({ products: enriched, total, page, limit, pages: Math.ceil(total / limit) });
 }
 
 async function getProduct(req, res) {
@@ -40,7 +56,12 @@ async function getProduct(req, res) {
     include: {
       category: true,
       customOptions: true,
-      reviews: { include: { user: { select: { name: true } } }, orderBy: { createdAt: 'desc' } },
+      // Bounded: a popular product could otherwise return every review ever written.
+      reviews: {
+        include: { user: { select: { name: true } } },
+        orderBy: { createdAt: 'desc' },
+        take: 20,
+      },
     },
   });
 

@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { CartProvider } from './contexts/CartContext'
@@ -26,8 +26,11 @@ function PageSpinner() {
 
 function ProtectedRoute({ children, adminOnly = false }) {
   const { user, loading } = useAuth()
+  const location = useLocation()
   if (loading) return <PageSpinner />
-  if (!user) return <Navigate to="/login" replace />
+  // Pass the attempted location so Login can return the user to it. Without this
+  // state, logging in after being bounced always landed on "/" instead.
+  if (!user) return <Navigate to="/login" replace state={{ from: location }} />
   if (adminOnly && user.role !== 'ADMIN') return <Navigate to="/" replace />
   return children
 }

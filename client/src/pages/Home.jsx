@@ -45,7 +45,7 @@ export default function Home() {
             <h1 className="max-w-3xl text-4xl md:text-6xl font-black leading-[0.95] tracking-tight">
               Vibrant custom gifts that preview directly on the product.
             </h1>
-            <p className="mt-6 max-w-xl text-lg text-white/82">
+            <p className="mt-6 max-w-xl text-lg text-white/80">
               Personalise shirts, mugs, posters, and cases with a bolder storefront, live product previews, and scheduled gift delivery built right into checkout.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">

@@ -29,7 +29,7 @@ export default function Login() {
       toast.success(`Welcome back, ${user.name.split(' ')[0]}!`)
       navigate(from, { replace: true })
     } catch (err) {
-      setError(err.response?.data?.error || 'Login failed. Please try again.')
+      setError(err.userMessage || 'Login failed. Please try again.')
     } finally {
       setLoading(false)
     }

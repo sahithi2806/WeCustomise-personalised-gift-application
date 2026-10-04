@@ -15,7 +15,7 @@ export default function ProductCard({ product }) {
 
         {product.isCustomisable && (
           <div className="absolute top-3 left-3">
-            <span className="badge gap-1 bg-white/92 text-brand-700 shadow-sm backdrop-blur">
+            <span className="badge gap-1 bg-white/90 text-brand-700 shadow-sm backdrop-blur">
               <Paintbrush size={10} /> Customisable
             </span>
           </div>
