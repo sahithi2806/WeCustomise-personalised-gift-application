@@ -39,7 +39,7 @@ app.use('/uploads', express.static(require('path').join(__dirname, '../uploads')
 
 // Serve static client build (deployed together)
 const path = require('path');
-const clientDist = path.resolve(__dirname, '../../../client/dist');
+const clientDist = process.env.RENDER ? '/opt/render/project/client/dist' : path.resolve(__dirname, '../../../client/dist');
 app.use(express.static(clientDist));
 app.get('*', (req, res) => {
   if (req.path.startsWith('/api/')) return res.status(404).json({ error: 'Not found' });
