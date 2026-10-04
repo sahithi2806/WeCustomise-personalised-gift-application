@@ -37,6 +37,10 @@ app.use(express.urlencoded({ extended: true }));
 // Serve disk-stored uploads so the URLs handed back by /api/upload are reachable.
 app.use('/uploads', express.static(require('path').join(__dirname, '../uploads')));
 
+// Serve static client build (deployed together on Render / single-link hosts)
+const path = require('path');
+app.use(express.static(path.join(__dirname, '../../client/dist')));
+
 // Health check
 app.get('/health', (req, res) => res.json({ status: 'OK', app: 'WeCustomise API', version: '1.0' }));
 
