@@ -64,7 +64,7 @@ export default function Home() {
                 key={src}
                 className={`overflow-hidden rounded-[1.8rem] border border-white/30 bg-white/10 shadow-[0_20px_45px_rgba(15,23,42,0.2)] ${index % 2 === 1 ? 'translate-y-6' : ''}`}
               >
-                <img src={src} alt="" className="h-full w-full object-cover" loading="lazy" />
+                <img src={src} alt="" width={500} height={500} className="h-full w-full object-cover" loading={index < 2 ? 'eager' : 'lazy'} />
               </div>
             ))}
           </div>

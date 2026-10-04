@@ -333,9 +333,9 @@ export default function CustomisationStudio({ product, onSave }) {
               {selectedLayer.type === 'text' ? `"${selectedLayer.text}"` : '📷 Image'}
             </span>
             <div className="flex items-center gap-1">
-              <button onClick={() => moveLayer(1)} title="Move down" className="p-1.5 rounded hover:bg-gray-100 text-gray-500"><ChevronDown size={14} /></button>
-              <button onClick={() => moveLayer(-1)} title="Move up" className="p-1.5 rounded hover:bg-gray-100 text-gray-500"><ChevronUp size={14} /></button>
-              <button onClick={deleteSelected} title="Delete" className="p-1.5 rounded hover:bg-red-50 text-red-400"><Trash2 size={14} /></button>
+              <button onClick={() => moveLayer(1)} title="Move down" aria-label="Move layer down" className="p-1.5 rounded hover:bg-gray-100 text-gray-500"><ChevronDown size={14} /></button>
+              <button onClick={() => moveLayer(-1)} title="Move up" aria-label="Move layer up" className="p-1.5 rounded hover:bg-gray-100 text-gray-500"><ChevronUp size={14} /></button>
+              <button onClick={deleteSelected} title="Delete" aria-label="Delete selected layer" className="p-1.5 rounded hover:bg-red-50 text-red-400"><Trash2 size={14} /></button>
             </div>
           </div>
         )}

@@ -1,24 +1,29 @@
+import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { CartProvider } from './contexts/CartContext'
 import Navbar from './components/layout/Navbar'
 import Footer from './components/layout/Footer'
-import Home from './pages/Home'
-import Shop from './pages/Shop'
-import ProductDetail from './pages/ProductDetail'
-import Cart from './pages/Cart'
-import Checkout from './pages/Checkout'
-import Gifts from './pages/Gifts'
-import Login from './pages/Login'
-import Orders from './pages/Orders'
-import Register from './pages/Register'
-import NotFound from './pages/NotFound'
-import AdminDashboard from './pages/AdminDashboard'
 
-function PageSpinner() {
+// Route-level splitting: AdminDashboard and Orders in particular are never
+// needed by most sessions, and shipping them in the entry chunk cost every
+// visitor ~354KB up front.
+const Home = lazy(() => import('./pages/Home'))
+const Shop = lazy(() => import('./pages/Shop'))
+const ProductDetail = lazy(() => import('./pages/ProductDetail'))
+const Cart = lazy(() => import('./pages/Cart'))
+const Checkout = lazy(() => import('./pages/Checkout'))
+const Gifts = lazy(() => import('./pages/Gifts'))
+const Login = lazy(() => import('./pages/Login'))
+const Orders = lazy(() => import('./pages/Orders'))
+const Register = lazy(() => import('./pages/Register'))
+const NotFound = lazy(() => import('./pages/NotFound'))
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'))
+
+function PageSpinner({ full = true }) {
   return (
-    <div className="min-h-screen flex items-center justify-center">
+    <div className={full ? 'min-h-screen flex items-center justify-center' : 'py-20 flex items-center justify-center'}>
       <div className="w-10 h-10 border-4 border-brand-700 border-t-transparent rounded-full animate-spin" />
     </div>
   )
@@ -47,7 +52,8 @@ function Layout({ children }) {
 
 function AppRoutes() {
   return (
-    <Routes>
+    <Suspense fallback={<PageSpinner />}>
+      <Routes>
       {/* Public */}
       <Route path="/"          element={<Layout><Home /></Layout>} />
       <Route path="/shop"      element={<Layout><Shop /></Layout>} />
@@ -64,7 +70,8 @@ function AppRoutes() {
 
       {/* 404 */}
       <Route path="*" element={<Layout><NotFound /></Layout>} />
-    </Routes>
+      </Routes>
+    </Suspense>
   )
 }
 
@@ -77,7 +84,7 @@ export default function App() {
             position="top-right"
             toastOptions={{
               duration: 3500,
-              style: { borderRadius: '10px', fontFamily: 'Inter, sans-serif', fontSize: '14px' },
+              style: { borderRadius: '12px', fontFamily: 'Manrope, sans-serif', fontSize: '14px' },
               success: { iconTheme: { primary: '#1F4E79', secondary: '#fff' } },
             }}
           />

@@ -12,11 +12,14 @@ function StarRating({ value, onChange }) {
   const [hovered, setHovered] = useState(0)
 
   return (
-    <div className="flex gap-1">
+    <div className="flex gap-1" role="radiogroup" aria-label="Your rating">
       {[1, 2, 3, 4, 5].map((n) => (
         <button
           key={n}
           type="button"
+          role="radio"
+          aria-checked={value === n}
+          aria-label={`Rate ${n} star${n > 1 ? 's' : ''}`}
           onClick={() => onChange?.(n)}
           onMouseEnter={() => setHovered(n)}
           onMouseLeave={() => setHovered(0)}

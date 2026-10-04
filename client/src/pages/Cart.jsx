@@ -96,20 +96,21 @@ export default function Cart() {
                       </p>
                     )}
                   </div>
-                  <button onClick={() => handleRemove(item)} className="text-gray-400 hover:text-red-500 transition-colors p-1 shrink-0">
+                  <button onClick={() => handleRemove(item)} aria-label={`Remove ${item.product.name} from cart`} className="text-gray-400 hover:text-red-500 transition-colors p-1 shrink-0">
                     <Trash2 size={16} />
                   </button>
                 </div>
 
                 <div className="mt-3 flex items-center justify-between">
                   <div className="flex items-center overflow-hidden rounded-lg border border-gray-200">
-                    <button onClick={() => handleQty(item, -1)} className="px-2.5 py-1.5 hover:bg-gray-50 text-gray-600 transition-colors">
+                    <button onClick={() => handleQty(item, -1)} aria-label={`Decrease quantity of ${item.product.name}`} className="px-2.5 py-1.5 hover:bg-gray-50 text-gray-600 transition-colors">
                       <Minus size={13} />
                     </button>
-                    <span className="min-w-[32px] px-3 py-1.5 text-center text-sm font-semibold">{item.quantity}</span>
+                    <span className="min-w-[32px] px-3 py-1.5 text-center text-sm font-semibold" aria-live="polite">{item.quantity}</span>
                     <button
                       onClick={() => handleQty(item, 1)}
                       disabled={item.quantity >= item.product.stock}
+                      aria-label={`Increase quantity of ${item.product.name}`}
                       className="px-2.5 py-1.5 hover:bg-gray-50 text-gray-600 transition-colors disabled:opacity-40"
                     >
                       <Plus size={13} />
