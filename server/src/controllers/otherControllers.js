@@ -1,11 +1,46 @@
 const { getPrisma } = require('../utils/prisma');
+const { round2 } = require('../utils/money');
+const { z } = require('zod');
+
+const VALID_ORDER_STATUSES = ['PLACED', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'];
+
+// Order status can only move forward through the fulfilment flow; DELIVERED and
+// CANCELLED are terminal. Prevents a typo or a bad client from resetting a
+// shipped order back to PLACED.
+const ORDER_STATUS_TRANSITIONS = {
+  PLACED: ['PROCESSING', 'CANCELLED'],
+  PROCESSING: ['SHIPPED', 'CANCELLED'],
+  SHIPPED: ['DELIVERED', 'CANCELLED'],
+  DELIVERED: [],
+  CANCELLED: [],
+};
+
+// Only these fields are writable. Parsing with `.strict()` alone would still let
+// a client overwrite `id` or `createdAt`, so we pick explicitly instead.
+const productSchema = z.object({
+  name: z.string().trim().min(2).max(120),
+  description: z.string().trim().min(10).max(5000),
+  price: z.coerce.number().nonnegative().finite(),
+  imageUrl: z.string().trim().url(),
+  categoryId: z.string().trim().min(1),
+  stock: z.coerce.number().int().nonnegative(),
+  isCustomisable: z.coerce.boolean().optional(),
+});
+
+const orderStatusSchema = z.object({
+  status: z.enum(['PLACED', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED']),
+});
 
 // ── Admin ────────────────────────────────────────────────────────────────────
 async function getDashboard(req, res) {
   const prisma = getPrisma();
+  // Paid-but-cancelled orders are still paymentStatus SUCCESS, so they have to be
+  // excluded explicitly or they inflate both revenue and the order count.
+  const paidActive = { paymentStatus: 'SUCCESS', status: { not: 'CANCELLED' } };
+
   const [totalOrders, totalRevenue, totalUsers, totalProducts, recentOrders, topProducts] = await Promise.all([
-    prisma.order.count({ where: { paymentStatus: 'SUCCESS' } }),
-    prisma.order.aggregate({ where: { paymentStatus: 'SUCCESS' }, _sum: { totalAmount: true } }),
+    prisma.order.count({ where: paidActive }),
+    prisma.order.aggregate({ where: paidActive, _sum: { totalAmount: true } }),
     prisma.user.count({ where: { role: 'CUSTOMER' } }),
     prisma.product.count(),
     prisma.order.findMany({ take: 5, orderBy: { createdAt: 'desc' }, include: { user: { select: { name: true, email: true } } } }),
@@ -32,26 +67,65 @@ async function getAllOrders(req, res) {
 
 async function updateOrderStatus(req, res) {
   const prisma = getPrisma();
-  const { status } = req.body;
-  const order = await prisma.order.update({ where: { id: req.params.id }, data: { status } });
+  const { status } = orderStatusSchema.parse(req.body);
+
+  const existing = await prisma.order.findUnique({ where: { id: req.params.id }, select: { id: true, status: true } });
+  if (!existing) return res.status(404).json({ error: 'Order not found.' });
+
+  const allowed = ORDER_STATUS_TRANSITIONS[existing.status] || [];
+  if (!allowed.includes(status)) {
+    return res.status(400).json({
+      error: `Cannot change an order from ${existing.status} to ${status}.`,
+      allowed,
+    });
+  }
+
+  const order = await prisma.order.update({
+    where: { id: req.params.id },
+    data: { status, paymentStatus: status === 'CANCELLED' ? 'CANCELLED' : undefined },
+  });
   res.json({ order });
 }
 
 async function createProduct(req, res) {
   const prisma = getPrisma();
-  const product = await prisma.product.create({ data: req.body, include: { category: true } });
+  const data = productSchema.parse(req.body);
+  const product = await prisma.product.create({ data, include: { category: true } });
   res.status(201).json({ product });
 }
 
 async function updateProduct(req, res) {
   const prisma = getPrisma();
-  const product = await prisma.product.update({ where: { id: req.params.id }, data: req.body, include: { category: true } });
+  const data = productSchema.parse(req.body);
+  const product = await prisma.product.update({ where: { id: req.params.id }, data, include: { category: true } });
   res.json({ product });
 }
 
 async function deleteProduct(req, res) {
   const prisma = getPrisma();
-  await prisma.product.delete({ where: { id: req.params.id } });
+  const { id } = req.params;
+
+  const product = await prisma.product.findUnique({ where: { id }, select: { id: true, name: true } });
+  if (!product) return res.status(404).json({ error: 'Product not found.' });
+
+  // OrderItem.productId and Review.productId are ON DELETE RESTRICT (they carry no
+  // cascade), so deleting a product that appears in history throws P2003 and
+  // surfaces as a 500. Block it and explain, rather than destroying order records.
+  const orderCount = await prisma.orderItem.count({ where: { productId: id } });
+  if (orderCount > 0) {
+    return res.status(409).json({
+      error: `"${product.name}" appears in ${orderCount} past order${orderCount === 1 ? '' : 's'} and cannot be deleted, because that would break order history. Remove it from the catalogue by setting its stock to 0 instead.`,
+      code: 'PRODUCT_IN_ORDERS',
+      orderCount,
+    });
+  }
+
+  await prisma.$transaction(async (tx) => {
+    // Reviews are also RESTRICT — remove them explicitly first.
+    await tx.review.deleteMany({ where: { productId: id } });
+    await tx.product.delete({ where: { id } });
+  });
+
   res.json({ message: 'Product deleted.' });
 }
 
@@ -119,14 +193,26 @@ async function validateDiscount(req, res) {
   if (!discount) return res.status(404).json({ error: 'Invalid or expired discount code.' });
   if (discount.usedCount >= discount.maxUses) return res.status(400).json({ error: 'Discount code has reached its usage limit.' });
 
-  const savings = ((cartTotal || 0) * discount.percentage) / 100;
-  res.json({ discount, savings, newTotal: (cartTotal || 0) - savings });
+  const base = Number(cartTotal) || 0;
+  const savings = round2(Math.min((base * discount.percentage) / 100, base));
+  res.json({ discount, savings, newTotal: round2(base - savings) });
 }
 
 // ── Upload ───────────────────────────────────────────────────────────────────
 async function uploadImage(req, res) {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded.' });
-  res.json({ url: req.file.path, publicId: req.file.filename });
+
+  if (req.file.secure_url) {
+    // Cloudinary hands back an absolute CDN URL.
+    return res.json({ url: req.file.secure_url, publicId: req.file.public_id || null });
+  }
+
+  // Disk storage gives an absolute filesystem path, which is useless to a
+  // browser. Serve it back as the public /uploads path that index.js mounts.
+  const filename = req.file.filename;
+  if (!filename) return res.status(500).json({ error: 'Could not determine the uploaded file URL.' });
+
+  res.json({ url: `/uploads/${filename}`, publicId: filename });
 }
 
 // ── Gifts ────────────────────────────────────────────────────────────────────

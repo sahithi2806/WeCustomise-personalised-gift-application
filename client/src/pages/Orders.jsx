@@ -54,7 +54,7 @@ export default function Orders() {
         const { data } = await api.get('/orders')
         setOrders(data.orders)
       } catch (error) {
-        toast.error(error.response?.data?.error || 'Could not load your orders.')
+        toast.error(error.userMessage || 'Could not load your orders.')
       } finally {
         setLoading(false)
       }
@@ -70,7 +70,7 @@ export default function Orders() {
       setOrders((current) => current.map((order) => (order.id === orderId ? { ...order, status: 'CANCELLED' } : order)))
       toast.success('Order cancelled successfully.')
     } catch (error) {
-      toast.error(error.response?.data?.error || 'Could not cancel this order.')
+      toast.error(error.userMessage || 'Could not cancel this order.')
     } finally {
       setCancellingId(null)
     }
@@ -78,10 +78,10 @@ export default function Orders() {
 
   if (loading) {
     return (
-      <div className="max-w-6xl mx-auto px-4 py-10 animate-pulse">
-        <div className="h-8 bg-gray-200 rounded w-48 mb-8" />
+      <div className="max-w-6xl mx-auto px-4 py-10">
+        <div className="h-8 skeleton rounded w-48 mb-8" />
         <div className="space-y-4">
-          {[1, 2, 3].map((item) => <div key={item} className="h-64 bg-gray-200 rounded-3xl" />)}
+          {[1, 2, 3].map((item) => <div key={item} className="h-64 skeleton rounded-3xl" />)}
         </div>
       </div>
     )
@@ -172,7 +172,7 @@ export default function Orders() {
                     </div>
                     <div className="rounded-2xl bg-gray-50 px-4 py-3">
                       <p className="text-gray-500 mb-1">Total</p>
-                      <p className="font-semibold text-brand-700">{formatCurrency(order.summary?.totalAmount || order.totalAmount)}</p>
+                      <p className="font-semibold text-brand-700">{formatCurrency(order.summary?.totalAmount ?? order.totalAmount)}</p>
                     </div>
                   </div>
 

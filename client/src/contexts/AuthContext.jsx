@@ -22,6 +22,15 @@ export function AuthProvider({ children }) {
 
   useEffect(() => { fetchMe() }, [fetchMe])
 
+  // The api layer dispatches this when any request 401s outside the login and
+  // register flows. Clearing `user` lets ProtectedRoute redirect in-app instead
+  // of the old hard `window.location.href`, which reloaded the whole app.
+  useEffect(() => {
+    const handleUnauthorised = () => setUser(null)
+    window.addEventListener('wc:unauthorised', handleUnauthorised)
+    return () => window.removeEventListener('wc:unauthorised', handleUnauthorised)
+  }, [])
+
   const login = async (email, password) => {
     const { data } = await api.post('/auth/login', { email, password })
     localStorage.setItem('wc_token', data.token)

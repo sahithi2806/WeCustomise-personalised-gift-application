@@ -153,7 +153,7 @@ export default function AdminDashboard() {
         categoryId: current.categoryId || categoriesRes.data.categories[0]?.id || '',
       }))
     } catch (error) {
-      toast.error(error.response?.data?.error || 'Could not load admin dashboard data.')
+      toast.error(error.userMessage || 'Could not load admin dashboard data.')
     } finally {
       setLoading(false)
     }
@@ -215,7 +215,7 @@ export default function AdminDashboard() {
       await loadAdminData()
       resetForm()
     } catch (error) {
-      toast.error(error.response?.data?.error || 'Could not save product.')
+      toast.error(error.userMessage || 'Could not save product.')
     } finally {
       setSavingProduct(false)
     }
@@ -229,7 +229,7 @@ export default function AdminDashboard() {
       await loadAdminData()
       if (editingId === productId) resetForm()
     } catch (error) {
-      toast.error(error.response?.data?.error || 'Could not delete product.')
+      toast.error(error.userMessage || 'Could not delete product.')
     } finally {
       setDeletingProductId(null)
     }
@@ -242,7 +242,7 @@ export default function AdminDashboard() {
       setRecentOrders((current) => current.map((order) => (order.id === orderId ? { ...order, status } : order)))
       toast.success('Order status updated.')
     } catch (error) {
-      toast.error(error.response?.data?.error || 'Could not update order status.')
+      toast.error(error.userMessage || 'Could not update order status.')
     } finally {
       setUpdatingOrderId(null)
     }
@@ -252,7 +252,7 @@ export default function AdminDashboard() {
     return (
       <div className="mx-auto max-w-7xl px-4 py-10">
         <div className="grid gap-5 md:grid-cols-4">
-          {[1, 2, 3, 4].map((item) => <div key={item} className="h-32 rounded-[1.75rem] bg-slate-200 animate-pulse" />)}
+          {[1, 2, 3, 4].map((item) => <div key={item} className="h-32 rounded-[1.75rem] skeleton" />)}
         </div>
       </div>
     )

@@ -1,13 +1,11 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { Trash2, ShoppingBag, ArrowRight, Minus, Plus, Sparkles, Tag } from 'lucide-react'
 import { useCart } from '../contexts/CartContext'
-import { useAuth } from '../contexts/AuthContext'
 import ProductPreview from '../components/ProductPreview'
 import toast from 'react-hot-toast'
 
 export default function Cart() {
   const { items, total, updateItem, removeItem, loading } = useCart()
-  const { user } = useAuth()
   const navigate = useNavigate()
 
   const handleQty = async (item, delta) => {
@@ -25,17 +23,18 @@ export default function Cart() {
     toast('Item removed from cart')
   }
 
-  if (!user) return null
+  // ProtectedRoute already gates this page, so a null user here means auth is
+// still resolving — rendering nothing flashes a blank white page.
 
   if (loading) {
     return (
-      <div className="max-w-5xl mx-auto px-4 py-12 animate-pulse">
-        <div className="h-7 bg-gray-200 rounded w-32 mb-8" />
+      <div className="max-w-5xl mx-auto px-4 py-12">
+        <div className="h-7 skeleton rounded w-32 mb-8" />
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-4">
-            {[1, 2, 3].map((i) => <div key={i} className="h-28 bg-gray-200 rounded-2xl" />)}
+            {[1, 2, 3].map((i) => <div key={i} className="h-28 skeleton rounded-2xl" />)}
           </div>
-          <div className="h-48 bg-gray-200 rounded-2xl" />
+          <div className="h-48 skeleton rounded-2xl" />
         </div>
       </div>
     )
@@ -60,7 +59,7 @@ export default function Cart() {
   const grandTotal = total + shipping
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24">
       <h1 className="text-2xl font-black tracking-tight text-slate-900 mb-8">
         Your Cart <span className="text-slate-400 font-normal text-lg">({items.length} {items.length === 1 ? 'item' : 'items'})</span>
       </h1>
@@ -97,20 +96,21 @@ export default function Cart() {
                       </p>
                     )}
                   </div>
-                  <button onClick={() => handleRemove(item)} className="text-gray-400 hover:text-red-500 transition-colors p-1 shrink-0">
+                  <button onClick={() => handleRemove(item)} aria-label={`Remove ${item.product.name} from cart`} className="text-gray-400 hover:text-red-500 transition-colors p-1 shrink-0">
                     <Trash2 size={16} />
                   </button>
                 </div>
 
                 <div className="mt-3 flex items-center justify-between">
                   <div className="flex items-center overflow-hidden rounded-lg border border-gray-200">
-                    <button onClick={() => handleQty(item, -1)} className="px-2.5 py-1.5 hover:bg-gray-50 text-gray-600 transition-colors">
+                    <button onClick={() => handleQty(item, -1)} aria-label={`Decrease quantity of ${item.product.name}`} className="px-2.5 py-1.5 hover:bg-gray-50 text-gray-600 transition-colors">
                       <Minus size={13} />
                     </button>
-                    <span className="min-w-[32px] px-3 py-1.5 text-center text-sm font-semibold">{item.quantity}</span>
+                    <span className="min-w-[32px] px-3 py-1.5 text-center text-sm font-semibold" aria-live="polite">{item.quantity}</span>
                     <button
                       onClick={() => handleQty(item, 1)}
                       disabled={item.quantity >= item.product.stock}
+                      aria-label={`Increase quantity of ${item.product.name}`}
                       className="px-2.5 py-1.5 hover:bg-gray-50 text-gray-600 transition-colors disabled:opacity-40"
                     >
                       <Plus size={13} />

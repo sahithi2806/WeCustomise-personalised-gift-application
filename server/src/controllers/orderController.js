@@ -1,14 +1,15 @@
 const { getPrisma } = require('../utils/prisma');
 const { sendOrderConfirmation } = require('../utils/mailer');
 const { formatOrder } = require('../utils/serializers');
+const { round2 } = require('../utils/money');
 
 const VALID_PAYMENT_METHODS = ['UPI', 'CARD', 'COD'];
 const REQUIRED_ADDRESS_FIELDS = ['fullName', 'phone', 'street', 'city', 'state', 'pincode'];
 
 function buildOrderSummary(cartItems, discountAmt) {
-  const subtotal = cartItems.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+  const subtotal = round2(cartItems.reduce((sum, item) => sum + item.product.price * item.quantity, 0));
   const shipping = subtotal >= 999 ? 0 : 99;
-  const totalAmount = Math.max(subtotal + shipping - discountAmt, 0);
+  const totalAmount = round2(Math.max(subtotal + shipping - discountAmt, 0));
 
   return { subtotal, shipping, totalAmount };
 }
@@ -92,7 +93,8 @@ async function createOrder(req, res) {
       }
 
       const subtotal = cartItems.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
-      discountAmt = (subtotal * discount.percentage) / 100;
+      // Cap at the subtotal so a discount can never exceed what it applies to.
+      discountAmt = round2(Math.min((subtotal * discount.percentage) / 100, subtotal));
       discountId = discount.id;
 
       await tx.discount.update({

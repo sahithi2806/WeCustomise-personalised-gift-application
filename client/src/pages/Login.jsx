@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
-import { Eye, EyeOff, AlertCircle } from 'lucide-react'
+import { Eye, EyeOff, AlertCircle, ArrowLeft } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import toast from 'react-hot-toast'
 
@@ -29,7 +29,7 @@ export default function Login() {
       toast.success(`Welcome back, ${user.name.split(' ')[0]}!`)
       navigate(from, { replace: true })
     } catch (err) {
-      setError(err.response?.data?.error || 'Login failed. Please try again.')
+      setError(err.userMessage || 'Login failed. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -54,6 +54,10 @@ export default function Login() {
           </Link>
           <h1 className="text-2xl font-bold text-gray-900">Welcome back</h1>
           <p className="text-gray-500 text-sm mt-1">Sign in to your account</p>
+          {/* Login sits outside <Layout>, so without this the logo is the only way back. */}
+          <Link to="/shop" className="mt-4 inline-flex items-center gap-2 text-sm text-brand-700 hover:underline">
+            <ArrowLeft size={14} /> Back to the store
+          </Link>
         </div>
 
         <div className="card p-8">

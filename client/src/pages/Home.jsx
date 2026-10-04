@@ -14,7 +14,7 @@ const FEATURES = [
 const heroImages = [
   'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500',
   'https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?w=500',
-  'https://images.unsplash.com/photo-1556821840-3a63f15732ce?w=500',
+  'https://images.unsplash.com/photo-1578587018452-892bacefd3f2?w=500',
   'https://images.unsplash.com/photo-1556656793-08538906a9f8?w=500',
 ]
 
@@ -38,14 +38,14 @@ export default function Home() {
       <section className="relative overflow-hidden bg-[linear-gradient(135deg,#1f4e79_0%,#ec4899_48%,#f59e0b_100%)] text-white">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.22),transparent_28%),radial-gradient(circle_at_bottom_right,rgba(255,255,255,0.14),transparent_24%)]" />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28 grid md:grid-cols-[1.15fr_0.85fr] gap-12 items-center">
-          <div>
+          <div className="animate-fade-up" style={{ animationDelay: '0.05s' }}>
             <span className="mb-5 inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-white/90">
               <Sparkles size={14} /> Make gifting look alive
             </span>
             <h1 className="max-w-3xl text-4xl md:text-6xl font-black leading-[0.95] tracking-tight">
               Vibrant custom gifts that preview directly on the product.
             </h1>
-            <p className="mt-6 max-w-xl text-lg text-white/82">
+            <p className="mt-6 max-w-xl text-lg text-white/80">
               Personalise shirts, mugs, posters, and cases with a bolder storefront, live product previews, and scheduled gift delivery built right into checkout.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
@@ -64,7 +64,7 @@ export default function Home() {
                 key={src}
                 className={`overflow-hidden rounded-[1.8rem] border border-white/30 bg-white/10 shadow-[0_20px_45px_rgba(15,23,42,0.2)] ${index % 2 === 1 ? 'translate-y-6' : ''}`}
               >
-                <img src={src} alt="" className="h-full w-full object-cover" loading="lazy" />
+                <img src={src} alt="" width={500} height={500} className="h-full w-full object-cover" loading={index < 2 ? 'eager' : 'lazy'} />
               </div>
             ))}
           </div>
@@ -139,8 +139,12 @@ export default function Home() {
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5">
-            {products.map((product) => <ProductCard key={product.id} product={product} />)}
+          <div className="stagger grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5">
+            {products.map((product, index) => (
+              <div key={product.id} style={{ '--stagger-i': index }}>
+                <ProductCard product={product} />
+              </div>
+            ))}
           </div>
         )}
       </section>

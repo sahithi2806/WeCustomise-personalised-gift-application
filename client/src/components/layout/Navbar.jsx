@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { ShoppingCart, Menu, X, LogOut, LayoutDashboard, Package, Gift, Sparkles } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
@@ -20,6 +20,19 @@ export default function Navbar() {
     setDropOpen(false)
     setMenuOpen(false)
   }
+
+  // Escape closes both overlays. Without this a keyboard user can open the
+  // dropdown and have no way to dismiss it without tabbing through every link.
+  useEffect(() => {
+    if (!dropOpen && !menuOpen) return
+    const onKeyDown = (event) => {
+      if (event.key !== 'Escape') return
+      setDropOpen(false)
+      setMenuOpen(false)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [dropOpen, menuOpen])
 
   const navLinks = [
     { to: '/', label: 'Home' },
@@ -64,7 +77,12 @@ export default function Navbar() {
               <Link to="/cart" className="relative rounded-2xl border border-white/70 bg-white/80 p-3 shadow-sm transition hover:-translate-y-0.5 hover:bg-brand-50">
                 <ShoppingCart size={20} className="text-slate-600" />
                 {count > 0 && (
-                  <span className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[linear-gradient(135deg,#1f4e79_0%,#ec4899_100%)] px-1 text-xs font-bold text-white">
+                  <span
+                    // Keyed on count so the pop animation replays each time the
+                    // total changes, instead of running once on mount.
+                    key={count}
+                    className="animate-badge-pop absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[linear-gradient(135deg,#1f4e79_0%,#ec4899_100%)] px-1 text-xs font-bold text-white"
+                  >
                     {count > 9 ? '9+' : count}
                   </span>
                 )}
@@ -75,10 +93,12 @@ export default function Navbar() {
               <div className="relative">
                 <button
                   onClick={() => setDropOpen((open) => !open)}
-                  className="flex items-center gap-3 rounded-2xl border border-white/70 bg-white px-3 py-2 shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-50"
+                  aria-expanded={dropOpen}
+                  aria-haspopup="menu"
+                  className="focus-ring flex items-center gap-3 rounded-2xl border border-white/70 bg-white px-3 py-2 shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-50"
                 >
                   <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#1f4e79_0%,#ec4899_100%)] text-sm font-bold text-white shadow-[0_10px_24px_rgba(31,78,121,0.22)]">
-                    {user.name[0].toUpperCase()}
+                    {(user.name || '?')[0].toUpperCase()}
                   </div>
                   <div className="text-left">
                     <p className="max-w-[120px] truncate text-sm font-semibold text-slate-700">{user.name.split(' ')[0]}</p>
@@ -136,7 +156,7 @@ export default function Navbar() {
                 )}
               </Link>
             )}
-            <button onClick={() => setMenuOpen((open) => !open)} className="rounded-xl p-2 transition hover:bg-slate-100">
+            <button onClick={() => setMenuOpen((open) => !open)} aria-expanded={menuOpen} aria-label="Toggle navigation menu" className="rounded-xl p-2 transition hover:bg-slate-100">
               {menuOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
           </div>
@@ -144,7 +164,7 @@ export default function Navbar() {
       </div>
 
       {menuOpen && (
-        <div className="border-t border-white/70 bg-white/92 px-4 py-4 backdrop-blur md:hidden">
+        <div className="border-t border-white/70 bg-white/90 px-4 py-4 backdrop-blur md:hidden">
           <div className="space-y-2">
             {navLinks.map((link) => (
               <NavLink

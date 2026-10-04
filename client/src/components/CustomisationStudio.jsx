@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { Type, Palette, ImagePlus, RotateCcw, Download, ZoomIn, ZoomOut, Move, Trash2, ChevronUp, ChevronDown } from 'lucide-react'
+import toast from 'react-hot-toast'
+import api from '../utils/api'
 
 const COLORS = [
   '#FFFFFF','#1a1a1a','#1F4E79','#2E75B6','#C0392B',
@@ -13,12 +15,14 @@ export default function CustomisationStudio({ product, onSave }) {
   const canvasRef   = useRef(null)
   const fileRef     = useRef(null)
   const [tab, setTab]         = useState('text')   // 'text' | 'color' | 'image'
+  const [designName, setDesignName] = useState('')  // user label, shown in cart/checkout
   const [layers, setLayers]   = useState([])        // { id, type, ...props }
   const [selected, setSelected] = useState(null)
   const [bgColor, setBgColor]   = useState('#FFFFFF')
   const [bgImage, setBgImage]   = useState(product.imageUrl)
   const [dragging, setDragging] = useState(null)
   const [dirty, setDirty]       = useState(false)
+  const [saving, setSaving]     = useState(false)
 
   // Text tool state
   const [textInput, setTextInput]   = useState('')
@@ -30,35 +34,61 @@ export default function CustomisationStudio({ product, onSave }) {
 
   const nextId = useRef(1)
   const getId = () => nextId.current++
+  const imgCache = useRef(new Map())
+  const paintRef = useRef(null)
 
   // ── Draw canvas ────────────────────────────────────────────
-  const draw = useCallback(() => {
+  // Images are cached by src. Previously draw() built a fresh `new Image()` on
+  // every call, so each mousemove during a drag re-decoded the product photo —
+  // and if that image ever failed to load, the onload never fired and the
+  // user's layers silently never painted at all.
+  const paint = useCallback(() => {
     const canvas = canvasRef.current
     if (!canvas) return
     const ctx = canvas.getContext('2d')
     const W = canvas.width, H = canvas.height
 
     ctx.clearRect(0, 0, W, H)
-
-    // Background color
     ctx.fillStyle = bgColor
     ctx.fillRect(0, 0, W, H)
 
-    // Background product image
-    if (bgImage) {
-      const img = new Image()
-      img.crossOrigin = 'anonymous'
-      img.onload = () => {
-        ctx.globalAlpha = 0.35
-        ctx.drawImage(img, 0, 0, W, H)
-        ctx.globalAlpha = 1
-        drawLayers(ctx, W, H)
-      }
-      img.src = bgImage
-    } else {
-      drawLayers(ctx, W, H)
+    const entry = bgImage ? getImage(bgImage) : null
+
+    // Layers always paint, whether or not the product photo decoded — otherwise
+    // a failed background load left the user staring at a blank canvas.
+    if (entry && entry.ready) {
+      ctx.save()
+      ctx.globalAlpha = 0.35
+      ctx.drawImage(entry.img, 0, 0, W, H)
+      ctx.restore()
     }
+
+    drawLayers(ctx, W, H)
   }, [bgColor, bgImage, layers, selected]) // eslint-disable-line
+
+  const getImage = (src) => {
+    if (!src) return null
+    const cached = imgCache.current.get(src)
+    if (cached) return cached
+
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    const entry = { img, ready: false, failed: false }
+    img.onload = () => {
+      entry.ready = true
+      paintRef.current?.()
+    }
+    img.onerror = () => {
+      entry.failed = true
+      paintRef.current?.()
+    }
+    img.src = src
+    imgCache.current.set(src, entry)
+    return entry
+  }
+
+  const draw = paint
+  paintRef.current = draw
 
   function drawLayers(ctx, W, H) {
     layers.forEach(layer => {
@@ -188,6 +218,9 @@ export default function CustomisationStudio({ product, onSave }) {
         x: canvas.width / 2, y: canvas.height / 2,
         width: w, height: h, opacity: 1,
         srcUrl: url,
+        // Keep the original file so it can be uploaded on save. `srcUrl` alone is
+        // a blob: URL, which is revoked on reload and dead on any other device.
+        file,
       }])
       setDirty(true)
     }
@@ -222,20 +255,45 @@ export default function CustomisationStudio({ product, onSave }) {
   const getSnapshot = () => canvasRef.current?.toDataURL('image/png')
 
   // ── Save ───────────────────────────────────────────────────
-  const handleSave = () => {
-    const snapshot = getSnapshot()
-    const customisation = {
-      bgColor,
-      layers: layers.map(l => ({
-        id: l.id, type: l.type,
-        x: l.x, y: l.y,
-        ...(l.type === 'text' ? { text: l.text, color: l.color, fontSize: l.fontSize, fontFamily: l.fontFamily, bold: l.bold, italic: l.italic } : {}),
-        ...(l.type === 'image' ? { srcUrl: l.srcUrl, width: l.width, height: l.height, opacity: l.opacity } : {}),
-      })),
-      snapshot,
+  const handleSave = async () => {
+    if (saving) return
+    setSaving(true)
+
+    try {
+      // Upload real files and store their served URLs. Persisting the blob: URL
+      // was the bug — it dies on reload and on any other machine.
+      const resolved = await Promise.all(layers.map(async (l) => {
+        if (l.type !== 'image') return l
+
+        if (l.srcUrl && !l.srcUrl.startsWith('blob:')) return l // already uploaded
+
+        if (!l.file) return l
+
+        const formData = new FormData()
+        formData.append('image', l.file)
+        const { data } = await api.post('/upload', formData)
+        return { ...l, srcUrl: data.url }
+      }))
+
+      const customisation = {
+        designName: designName.trim() || null,
+        bgColor,
+        layers: resolved.map(l => ({
+          id: l.id, type: l.type,
+          x: l.x, y: l.y,
+          ...(l.type === 'text' ? { text: l.text, color: l.color, fontSize: l.fontSize, fontFamily: l.fontFamily, bold: l.bold, italic: l.italic } : {}),
+          ...(l.type === 'image' ? { srcUrl: l.srcUrl, width: l.width, height: l.height, opacity: l.opacity } : {}),
+        })),
+      }
+
+      setLayers(resolved)
+      onSave(customisation)
+      setDirty(false)
+    } catch (error) {
+      toast.error(error.userMessage || 'Could not save your design. Please try again.')
+    } finally {
+      setSaving(false)
     }
-    onSave(customisation)
-    setDirty(false)
   }
 
   const selectedLayer = layers.find(l => l.id === selected)
@@ -275,9 +333,9 @@ export default function CustomisationStudio({ product, onSave }) {
               {selectedLayer.type === 'text' ? `"${selectedLayer.text}"` : '📷 Image'}
             </span>
             <div className="flex items-center gap-1">
-              <button onClick={() => moveLayer(1)} title="Move down" className="p-1.5 rounded hover:bg-gray-100 text-gray-500"><ChevronDown size={14} /></button>
-              <button onClick={() => moveLayer(-1)} title="Move up" className="p-1.5 rounded hover:bg-gray-100 text-gray-500"><ChevronUp size={14} /></button>
-              <button onClick={deleteSelected} title="Delete" className="p-1.5 rounded hover:bg-red-50 text-red-400"><Trash2 size={14} /></button>
+              <button onClick={() => moveLayer(1)} title="Move down" aria-label="Move layer down" className="p-1.5 rounded hover:bg-gray-100 text-gray-500"><ChevronDown size={14} /></button>
+              <button onClick={() => moveLayer(-1)} title="Move up" aria-label="Move layer up" className="p-1.5 rounded hover:bg-gray-100 text-gray-500"><ChevronUp size={14} /></button>
+              <button onClick={deleteSelected} title="Delete" aria-label="Delete selected layer" className="p-1.5 rounded hover:bg-red-50 text-red-400"><Trash2 size={14} /></button>
             </div>
           </div>
         )}
@@ -308,6 +366,19 @@ export default function CustomisationStudio({ product, onSave }) {
         {/* ── Text Tab ── */}
         {tab === 'text' && (
           <div className="space-y-4">
+            <div>
+              <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5 block">Name this design</label>
+              <input
+                value={designName}
+                onChange={e => { setDesignName(e.target.value); setDirty(true) }}
+                onBlur={() => setDirty(true)}
+                placeholder="e.g. Anniversary gift"
+                maxLength={40}
+                className="input text-sm"
+              />
+              <p className="text-xs text-gray-400 mt-1">Optional — helps you spot this design in your cart and orders.</p>
+            </div>
+
             <div>
               <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5 block">Your Text</label>
               <div className="flex gap-2">
@@ -455,10 +526,10 @@ export default function CustomisationStudio({ product, onSave }) {
 
           <button
             onClick={handleSave}
-            disabled={!dirty && layers.length === 0}
+            disabled={saving || (!dirty && layers.length === 0)}
             className="btn-primary w-full py-3 text-base flex items-center justify-center gap-2"
           >
-            ✨ Add Customised Product to Cart
+            {saving ? 'Uploading artwork...' : '✨ Add Customised Product to Cart'}
           </button>
         </div>
       </div>

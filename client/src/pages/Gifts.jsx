@@ -32,7 +32,7 @@ export default function Gifts() {
         const { data } = await api.get('/gifts')
         setGifts(data.gifts)
       } catch (error) {
-        toast.error(error.response?.data?.error || 'Could not load your gift reminders.')
+        toast.error(error.userMessage || 'Could not load your gift reminders.')
       } finally {
         setLoading(false)
       }
@@ -61,7 +61,7 @@ export default function Gifts() {
       setForm(initialForm)
       toast.success(data.message || 'Gift reminder scheduled.')
     } catch (error) {
-      toast.error(error.response?.data?.error || 'Could not schedule your gift reminder.')
+      toast.error(error.userMessage || 'Could not schedule your gift reminder.')
     } finally {
       setSaving(false)
     }
@@ -147,9 +147,9 @@ export default function Gifts() {
           </div>
 
           {loading ? (
-            <div className="space-y-4 animate-pulse">
+            <div className="space-y-4">
               {[1, 2, 3].map((item) => (
-                <div key={item} className="h-36 rounded-3xl bg-gray-200" />
+                <div key={item} className="h-36 rounded-3xl skeleton" />
               ))}
             </div>
           ) : gifts.length === 0 ? (

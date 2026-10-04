@@ -156,12 +156,12 @@ export default function Shop() {
         {loading ? (
           <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">
             {[...Array(12)].map((_, index) => (
-              <div key={index} className="card animate-pulse">
-                <div className="aspect-square bg-slate-200" />
+              <div key={index} className="card">
+                <div className="aspect-square skeleton" />
                 <div className="space-y-2 p-4">
-                  <div className="h-3 w-1/2 rounded bg-slate-200" />
-                  <div className="h-4 w-3/4 rounded bg-slate-200" />
-                  <div className="mt-3 h-4 w-1/4 rounded bg-slate-200" />
+                  <div className="h-3 w-1/2 rounded skeleton" />
+                  <div className="h-4 w-3/4 rounded skeleton" />
+                  <div className="mt-3 h-4 w-1/4 rounded skeleton" />
                 </div>
               </div>
             ))}
@@ -174,8 +174,12 @@ export default function Shop() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">
-              {products.map((product) => <ProductCard key={product.id} product={product} />)}
+            <div className="stagger grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">
+              {products.map((product, index) => (
+                <div key={product.id} style={{ '--stagger-i': index }}>
+                  <ProductCard product={product} />
+                </div>
+              ))}
             </div>
 
             {pages > 1 && (
