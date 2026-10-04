@@ -39,7 +39,13 @@ app.use('/uploads', express.static(require('path').join(__dirname, '../uploads')
 
 // Serve static client build (deployed together on Render / single-link hosts)
 const path = require('path');
-app.use(express.static(path.resolve(__dirname, '../../../client/dist')));
+app.use(express.static('/opt/render/project/src/client/dist'));
+
+// SPA fallback: serve index.html for non-API routes
+app.get('*', (req, res) => {
+  if (req.path.startsWith('/api/')) return res.status(404).json({ error: 'Not found' });
+  res.sendFile('/opt/render/project/src/client/dist/index.html');
+});
 
 // Health check
 app.get('/health', (req, res) => res.json({ status: 'OK', app: 'WeCustomise API', version: '1.0' }));
