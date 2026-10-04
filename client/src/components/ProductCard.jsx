@@ -1,16 +1,34 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Star, Paintbrush } from 'lucide-react'
+import { motion, useReducedMotion } from 'framer-motion'
+import { Star, Paintbrush, Image as ImageIcon } from 'lucide-react'
 
-export default function ProductCard({ product }) {
+export default function ProductCard({ product, index = 0 }) {
+  const reduceMotion = useReducedMotion()
+  const [imgError, setImgError] = useState(false)
+  const imageClass = 'h-full w-full object-cover transition duration-500 group-hover:scale-110'
+
   return (
     <Link to={`/product/${product.id}`} className="card group flex flex-col transition duration-300 hover:-translate-y-1 hover:shadow-[0_22px_60px_rgba(15,23,42,0.12)]">
       <div className="relative aspect-square overflow-hidden bg-slate-100">
-        <img
-          src={product.imageUrl}
-          alt={product.name}
-          className="h-full w-full object-cover transition duration-500 group-hover:scale-110"
-          loading="lazy"
-        />
+        {imgError ? (
+          <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-br from-brand-50 to-slate-100 p-4 text-center">
+            <ImageIcon className="mb-2 text-brand-300" size={28} />
+            <span className="text-xs font-semibold text-slate-500 line-clamp-2">{product.name}</span>
+          </div>
+        ) : reduceMotion ? (
+          <img src={product.imageUrl} alt={product.name} className={imageClass} loading="lazy" onError={() => setImgError(true)} />
+        ) : (
+          <motion.img
+            layoutId={`product-image-${product.id}`}
+            src={product.imageUrl}
+            alt={product.name}
+            className={imageClass}
+            loading="lazy"
+            onError={() => setImgError(true)}
+            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+          />
+        )}
         <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-slate-950/35 to-transparent" />
 
         {product.isCustomisable && (

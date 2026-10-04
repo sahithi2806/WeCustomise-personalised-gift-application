@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { motion } from 'framer-motion'
 import { useLocation, useNavigate, Link } from 'react-router-dom'
 import { ArrowLeft, BadgePercent, CalendarClock, CreditCard, Gift, MapPin, ShieldCheck, Smartphone, Truck } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -243,11 +244,9 @@ export default function Checkout() {
           <h1 className="text-3xl font-black tracking-tight text-slate-900">Checkout</h1>
           <p className="text-sm text-slate-500 mt-1">Review delivery details, schedule gifts, and confirm the final total.</p>
         </div>
-        {location.state?.fromCart && (
-          <div className="hidden md:flex items-center gap-2 rounded-full bg-brand-50 px-4 py-2 text-sm text-brand-700">
+        <div className="hidden md:flex items-center gap-2 rounded-full bg-brand-50 px-4 py-2 text-sm text-brand-700">
             <ShieldCheck size={16} /> Secure checkout
           </div>
-        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-8">
@@ -463,14 +462,27 @@ export default function Checkout() {
                 <span>{shipping === 0 ? 'Free' : formatCurrency(shipping)}</span>
               </div>
               {discountAmount > 0 && (
-                <div className="flex justify-between text-green-700">
+                <motion.div
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex justify-between text-green-700"
+                >
                   <span>Discount</span>
                   <span>-{formatCurrency(discountAmount)}</span>
-                </div>
+                </motion.div>
               )}
               <div className="flex justify-between font-bold text-base text-gray-900 pt-3 border-t border-gray-100">
                 <span>Total</span>
-                <span>{formatCurrency(grandTotal)}</span>
+                {/* Keyed on the amount *and* a monotonic counter so the animation
+                    replays every time the amount changes, not just on mount. */}
+                <motion.span
+                  key={grandTotal}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                >
+                  {formatCurrency(grandTotal)}
+                </motion.span>
               </div>
             </div>
 

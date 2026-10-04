@@ -1,4 +1,5 @@
 import { useId } from 'react'
+import { motion, useReducedMotion } from 'framer-motion'
 
 function getCategorySlug(product) {
   return product?.category?.slug || ''
@@ -89,17 +90,32 @@ export default function ProductPreview({
   className = '',
   imageClassName = '',
   showBadge = false,
+  layoutId = null,
 }) {
   const id = useId()
+  const reduceMotion = useReducedMotion()
   const config = getPreviewConfig(product)
   const layers = Array.isArray(customisation?.layers) ? customisation.layers : []
   const hasDesign = Boolean(customisation?.bgColor || layers.length)
   const clipPathId = `${id}-clip`
   const filterId = `${id}-shadow`
+  const imageClass = `h-full w-full object-cover ${imageClassName}`
 
   return (
     <div className={`relative overflow-hidden bg-white ${className}`}>
-      <img src={product.imageUrl} alt={product.name} className={`h-full w-full object-cover ${imageClassName}`} />
+      {/* layoutId is opt-in so only the detail hero joins the ProductCard morph;
+          the cart and checkout thumbnails stay plain images. */}
+      {layoutId && !reduceMotion ? (
+        <motion.img
+          layoutId={layoutId}
+          src={product.imageUrl}
+          alt={product.name}
+          className={imageClass}
+          transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+        />
+      ) : (
+        <img src={product.imageUrl} alt={product.name} className={imageClass} />
+      )}
 
       {customisation?.bgColor && (
         <div

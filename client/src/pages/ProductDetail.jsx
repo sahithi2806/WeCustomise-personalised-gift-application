@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { Star, ShoppingBag, Paintbrush, ChevronLeft, ChevronRight, Package, Sparkles } from 'lucide-react'
 import api from '../utils/api'
@@ -30,6 +31,20 @@ function StarRating({ value, onChange }) {
           />
         </button>
       ))}
+    </div>
+  )
+}
+
+function StudioHeader() {
+  return (
+    <div className="flex items-center gap-3 mb-6">
+      <div className="w-10 h-10 rounded-xl bg-brand-700 flex items-center justify-center shadow-sm">
+        <Paintbrush size={18} className="text-white" />
+      </div>
+      <div>
+        <h2 className="text-lg font-bold text-gray-900">Make it yours</h2>
+        <p className="text-xs text-gray-500">Add text or artwork and watch it update on the actual product.</p>
+      </div>
     </div>
   )
 }
@@ -154,12 +169,12 @@ export default function ProductDetail() {
 
   if (loading) {
     return (
-      <div className="max-w-6xl mx-auto px-4 py-12 animate-pulse">
+      <div className="max-w-6xl mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-          <div className="aspect-square bg-gray-200 rounded-2xl" />
+          <div className="aspect-square skeleton rounded-2xl" />
           <div className="space-y-4 pt-4">
             {[...Array(5)].map((_, i) => (
-              <div key={i} className="h-4 bg-gray-200 rounded" style={{ width: `${70 - i * 10}%` }} />
+              <div key={i} className="h-4 skeleton rounded" style={{ width: `${70 - i * 10}%` }} />
             ))}
           </div>
         </div>
@@ -191,6 +206,7 @@ export default function ProductDetail() {
             className="card aspect-square rounded-[2rem] border border-white/70 bg-gradient-to-br from-white via-white to-brand-50/60"
             imageClassName="scale-[1.02]"
             showBadge
+            layoutId={`product-image-${product.id}`}
           />
 
           <div className="grid grid-cols-3 gap-3">
@@ -319,18 +335,48 @@ export default function ProductDetail() {
       )}
 
       {customiseMode && product.isCustomisable && (
-        <div className="card p-6 mb-10 border-2 border-brand-100 bg-gradient-to-br from-brand-50/50 to-white">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-xl bg-brand-700 flex items-center justify-center shadow-sm">
-              <Paintbrush size={18} className="text-white" />
+        // AnimatePresence is required for the sheet's exit animation to run —
+        // without it the sheet would vanish instantly on close.
+        <AnimatePresence>
+          <>
+            {/* Mobile: a drag-to-dismiss bottom sheet. Inline on md+ where there is
+                room for the two-column studio layout. */}
+            <div className="md:hidden" key="sheet">
+              <motion.div
+                className="fixed inset-0 z-40 bg-slate-950/50 backdrop-blur-sm"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setCustomiseMode(false)}
+              />
+              <motion.div
+                drag="y"
+                dragConstraints={{ top: 0, bottom: 0 }}
+                dragElastic={{ top: 0, bottom: 0.4 }}
+                onDragEnd={(_, info) => {
+                  if (info.offset.y > 140 || info.velocity.y > 500) setCustomiseMode(false)
+                }}
+                className="fixed inset-x-0 bottom-0 z-50 max-h-[92vh] overflow-y-auto rounded-t-[2rem] bg-white p-6 shadow-2xl"
+                initial={{ y: '100%' }}
+                animate={{ y: 0 }}
+                exit={{ y: '100%' }}
+                transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+              >
+                <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-slate-200" aria-hidden="true" />
+                <StudioHeader />
+                <CustomisationStudio product={product} onSave={handleCustomisedSave} />
+              </motion.div>
             </div>
-            <div>
-              <h2 className="text-lg font-bold text-gray-900">Make it yours</h2>
-              <p className="text-xs text-gray-500">Add text or artwork and watch it update on the actual product.</p>
+
+            {/* Desktop: inline panel, unchanged placement */}
+            <div className="hidden md:block" key="inline">
+              <div className="card p-6 mb-10 border-2 border-brand-100 bg-gradient-to-br from-brand-50/50 to-white">
+                <StudioHeader />
+                <CustomisationStudio product={product} onSave={handleCustomisedSave} />
+              </div>
             </div>
-          </div>
-          <CustomisationStudio product={product} onSave={handleCustomisedSave} />
-        </div>
+          </>
+        </AnimatePresence>
       )}
 
       <section>

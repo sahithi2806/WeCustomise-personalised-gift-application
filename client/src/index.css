@@ -28,15 +28,15 @@
 
 @layer components {
   .btn-primary {
-    @apply rounded-xl bg-brand-700 px-5 py-2.5 font-semibold text-white shadow-[0_10px_25px_rgba(31,78,121,0.22)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-brand-900 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply rounded-xl bg-brand-700 px-5 py-2.5 font-semibold text-white shadow-[0_10px_25px_rgba(31,78,121,0.22)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-brand-900 active:translate-y-0 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0;
   }
 
   .btn-outline {
-    @apply rounded-xl border-2 border-brand-700 px-5 py-2.5 font-semibold text-brand-700 transition-all duration-200 hover:-translate-y-0.5 hover:bg-brand-700 hover:text-white;
+    @apply rounded-xl border-2 border-brand-700 px-5 py-2.5 font-semibold text-brand-700 transition-all duration-200 hover:-translate-y-0.5 hover:bg-brand-700 hover:text-white active:translate-y-0 active:scale-[0.98];
   }
 
   .btn-ghost {
-    @apply rounded-xl px-4 py-2 font-medium text-gray-600 transition-colors duration-200 hover:bg-brand-50 hover:text-brand-700;
+    @apply rounded-xl px-4 py-2 font-medium text-gray-600 transition-colors duration-200 hover:bg-brand-50 hover:text-brand-700 active:scale-[0.98];
   }
 
   .input {
@@ -57,6 +57,91 @@
 
   .glass-panel {
     @apply border border-white/70 bg-white/75 backdrop-blur;
+  }
+}
+
+/* ── Motion ────────────────────────────────────────────────────────────────
+   CSS handles everything that does not need an exit animation: page and
+   section entrances, list staggering, badge pulses, skeleton shimmer, and
+   press feedback. Route exits and the product-card morph use framer-motion
+   instead, because CSS cannot animate an already-unmounted element.        */
+
+@keyframes wc-fade-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes wc-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes wc-scale-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes wc-badge-pop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.28); }
+  100% { transform: scale(1); }
+}
+
+@keyframes wc-shimmer {
+  from { background-position: -400px 0; }
+  to   { background-position: 400px 0; }
+}
+
+@layer utilities {
+  .animate-fade-up {
+    animation: wc-fade-up 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .animate-fade-in {
+    animation: wc-fade-in 0.4s ease-out both;
+  }
+
+  .animate-scale-in {
+    animation: wc-scale-in 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  /* Cascade for grids and lists. Each child reads its own index via
+     --stagger-i, set inline with style={{ '--stagger-i': i }}. */
+  .stagger > * {
+    animation: wc-fade-up 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: calc(var(--stagger-i, 0) * 45ms);
+  }
+
+  .animate-badge-pop {
+    animation: wc-badge-pop 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .skeleton {
+    background-image: linear-gradient(
+      90deg,
+      rgb(226 232 240) 0%,
+      rgb(241 245 249) 40%,
+      rgb(226 232 240) 80%
+    );
+    background-size: 800px 100%;
+    animation: wc-shimmer 1.4s linear infinite;
+  }
+
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2;
+  }
+}
+
+/* Honour the OS setting. Without this the motion work below actively harms
+   anyone who has asked their system for reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 

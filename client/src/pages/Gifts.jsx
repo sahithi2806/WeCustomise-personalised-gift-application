@@ -147,9 +147,9 @@ export default function Gifts() {
           </div>
 
           {loading ? (
-            <div className="space-y-4 animate-pulse">
+            <div className="space-y-4">
               {[1, 2, 3].map((item) => (
-                <div key={item} className="h-36 rounded-3xl bg-gray-200" />
+                <div key={item} className="h-36 rounded-3xl skeleton" />
               ))}
             </div>
           ) : gifts.length === 0 ? (

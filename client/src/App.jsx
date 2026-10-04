@@ -1,10 +1,12 @@
 import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { AnimatePresence } from 'framer-motion'
 import { Toaster } from 'react-hot-toast'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { CartProvider } from './contexts/CartContext'
 import Navbar from './components/layout/Navbar'
 import Footer from './components/layout/Footer'
+import PageTransition from './components/motion/PageTransition'
 
 // Route-level splitting: AdminDashboard and Orders in particular are never
 // needed by most sessions, and shipping them in the entry chunk cost every
@@ -44,33 +46,44 @@ function Layout({ children }) {
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
-      <main className="flex-1">{children}</main>
+      <main className="flex-1">
+        <PageTransition>{children}</PageTransition>
+      </main>
       <Footer />
     </div>
   )
 }
 
 function AppRoutes() {
+  const location = useLocation()
+
   return (
+    // Suspense sits outside AnimatePresence so a lazy chunk resolving mid-
+    // transition can't interrupt the outgoing page's exit animation.
     <Suspense fallback={<PageSpinner />}>
-      <Routes>
-      {/* Public */}
-      <Route path="/"          element={<Layout><Home /></Layout>} />
-      <Route path="/shop"      element={<Layout><Shop /></Layout>} />
-      <Route path="/product/:id" element={<Layout><ProductDetail /></Layout>} />
-      <Route path="/login"     element={<Login />} />
-      <Route path="/register"  element={<Register />} />
+      {/* mode="wait" holds the outgoing page until its exit finishes, which is
+          what makes a route change read as a fade through. Keying on pathname
+          is what gives AnimatePresence something to compare. */}
+      <AnimatePresence mode="wait" initial={false}>
+        <Routes location={location} key={location.pathname}>
+        {/* Public */}
+        <Route path="/"          element={<Layout><Home /></Layout>} />
+        <Route path="/shop"      element={<Layout><Shop /></Layout>} />
+        <Route path="/product/:id" element={<Layout><ProductDetail /></Layout>} />
+        <Route path="/login"     element={<Login />} />
+        <Route path="/register"  element={<Register />} />
 
-      {/* Protected */}
-      <Route path="/cart" element={<ProtectedRoute><Layout><Cart /></Layout></ProtectedRoute>} />
-      <Route path="/checkout" element={<ProtectedRoute><Layout><Checkout /></Layout></ProtectedRoute>} />
-      <Route path="/orders" element={<ProtectedRoute><Layout><Orders /></Layout></ProtectedRoute>} />
-      <Route path="/gifts" element={<ProtectedRoute><Layout><Gifts /></Layout></ProtectedRoute>} />
-      <Route path="/admin" element={<ProtectedRoute adminOnly><Layout><AdminDashboard /></Layout></ProtectedRoute>} />
+        {/* Protected */}
+        <Route path="/cart" element={<ProtectedRoute><Layout><Cart /></Layout></ProtectedRoute>} />
+        <Route path="/checkout" element={<ProtectedRoute><Layout><Checkout /></Layout></ProtectedRoute>} />
+        <Route path="/orders" element={<ProtectedRoute><Layout><Orders /></Layout></ProtectedRoute>} />
+        <Route path="/gifts" element={<ProtectedRoute><Layout><Gifts /></Layout></ProtectedRoute>} />
+        <Route path="/admin" element={<ProtectedRoute adminOnly><Layout><AdminDashboard /></Layout></ProtectedRoute>} />
 
-      {/* 404 */}
-      <Route path="*" element={<Layout><NotFound /></Layout>} />
-      </Routes>
+        {/* 404 */}
+        <Route path="*" element={<Layout><NotFound /></Layout>} />
+        </Routes>
+      </AnimatePresence>
     </Suspense>
   )
 }

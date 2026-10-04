@@ -252,7 +252,7 @@ export default function AdminDashboard() {
     return (
       <div className="mx-auto max-w-7xl px-4 py-10">
         <div className="grid gap-5 md:grid-cols-4">
-          {[1, 2, 3, 4].map((item) => <div key={item} className="h-32 rounded-[1.75rem] bg-slate-200 animate-pulse" />)}
+          {[1, 2, 3, 4].map((item) => <div key={item} className="h-32 rounded-[1.75rem] skeleton" />)}
         </div>
       </div>
     )

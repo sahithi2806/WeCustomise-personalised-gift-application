@@ -77,7 +77,12 @@ export default function Navbar() {
               <Link to="/cart" className="relative rounded-2xl border border-white/70 bg-white/80 p-3 shadow-sm transition hover:-translate-y-0.5 hover:bg-brand-50">
                 <ShoppingCart size={20} className="text-slate-600" />
                 {count > 0 && (
-                  <span className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[linear-gradient(135deg,#1f4e79_0%,#ec4899_100%)] px-1 text-xs font-bold text-white">
+                  <span
+                    // Keyed on count so the pop animation replays each time the
+                    // total changes, instead of running once on mount.
+                    key={count}
+                    className="animate-badge-pop absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[linear-gradient(135deg,#1f4e79_0%,#ec4899_100%)] px-1 text-xs font-bold text-white"
+                  >
                     {count > 9 ? '9+' : count}
                   </span>
                 )}
@@ -90,10 +95,10 @@ export default function Navbar() {
                   onClick={() => setDropOpen((open) => !open)}
                   aria-expanded={dropOpen}
                   aria-haspopup="menu"
-                  className="flex items-center gap-3 rounded-2xl border border-white/70 bg-white px-3 py-2 shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-50"
+                  className="focus-ring flex items-center gap-3 rounded-2xl border border-white/70 bg-white px-3 py-2 shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-50"
                 >
                   <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#1f4e79_0%,#ec4899_100%)] text-sm font-bold text-white shadow-[0_10px_24px_rgba(31,78,121,0.22)]">
-                    {user.name[0].toUpperCase()}
+                    {(user.name || '?')[0].toUpperCase()}
                   </div>
                   <div className="text-left">
                     <p className="max-w-[120px] truncate text-sm font-semibold text-slate-700">{user.name.split(' ')[0]}</p>
